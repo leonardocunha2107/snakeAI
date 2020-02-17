@@ -12,8 +12,8 @@ def __mod__(tup1,tup2): ##find actual position of snake in the board
     return (t1%t2 for t1,t2 in zip(tup1,tup2))
 
 class SnakeGame(gym.Env):
-    self.SNAKE=1
-    self.FRUIT=2
+    SNAKE=1
+    FRUIT=2
     def __init__(self,dim=(10,10)):
         self.dim=dim
         self.action_space=gym.spaces.Discrete(4)
@@ -49,7 +49,15 @@ class SnakeGame(gym.Env):
         self.snake.append(snake_head)
         self.board[snake_head]=self.SNAKE
         if snake_head==self.fruit:
-            self.
+            self.fruit=self.random_pos()
+            self.board[self.fruit]=self.FRUIT
+            return self.board,1,len(self.snake)==self.dim[0]*self.dim[1],{}
+        
+        snake_tail=self.snake.popleft()
+        self.empty.add(snake_tail)
+        self.board[snake_tail]=0
+        
+        return self.board,0,False,{}
         
         
     
