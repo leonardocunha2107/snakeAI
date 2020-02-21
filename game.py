@@ -12,8 +12,7 @@ directions=[(0,1),(-1,0),(0,-1),(1,0)]
 """directions=['RIGHT','LEFT','UP','DOWN']
 d2v={d:v for d,v in zip(directions,[(1,0),(-1,0),(0,1),(0,-1)])}
 """
-def __mod__(tup1,tup2): ##find actual position of snake in the board
-    return (t1%t2 for t1,t2 in zip(tup1,tup2))
+
 
 class SnakeGame(gym.Env):
     SNAKE=1
@@ -36,6 +35,8 @@ class SnakeGame(gym.Env):
         
         self.fruit=self.random_pos()
         self.board[self.fruit]=self.FRUIT
+        
+        return self.board
     
     def random_pos(self):
         pos=random.sample(self.empty,1)
@@ -45,12 +46,9 @@ class SnakeGame(gym.Env):
     def step(self,action):
         snake_head=self.snake.pop()
         self.snake.append(snake_head)
-        print(snake_head)
         snake_head=tuple(((snake_head[i]+directions[action][i])%self.dim[i] for i in [0,1]))
         
-        print(snake_head)
-        if  snake_head!=self.fruit and snake_head not in self.empty:
-
+        if  self.board[snake_head]==self.SNAKE:
             return self.board,-1.,True,{}
         
         self.snake.append(snake_head)
