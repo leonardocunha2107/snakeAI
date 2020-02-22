@@ -26,7 +26,6 @@ class SimpleDQN(nn.Module):
         else:
             B=1
             x=x.view(1,-1)
-        #print(x.shape)
         x=F.relu(self.fc1(x))
         return self.fc2(x).view(B,self.n_actions)
     

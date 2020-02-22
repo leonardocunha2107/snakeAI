@@ -3,7 +3,7 @@ import torch.optim as optim
 from .game import SnakeGame
 import torch
 from itertools import count
-
+BATCH_SIZE=128
 def optimize_model(optimizer,agent,target_net,memory):
     if len(memory) < BATCH_SIZE:
         return
@@ -49,7 +49,6 @@ def optimize_model(optimizer,agent,target_net,memory):
     optimizer.step()
 
 def train(num_episodes):
-    BATCH_SIZE = 128
     GAMMA = 0.999
     
     TARGET_UPDATE = 10
