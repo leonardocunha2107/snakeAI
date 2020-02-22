@@ -4,7 +4,7 @@ from .game import SnakeGame
 import torch
 from itertools import count
 
-def optimize_model(optimizer,agent,target_net):
+def optimize_model(optimizer,agent,target_net,memory):
     if len(memory) < BATCH_SIZE:
         return
     transitions = memory.sample(BATCH_SIZE)
@@ -90,7 +90,7 @@ def train(num_episodes):
             state = next_state
     
             # Perform one step of the optimization (on the target network)
-            optimize_model(optimizer,agent,target_net)
+            optimize_model(optimizer,agent,target_net,memory)
             if done:
                 episode_durations.append(t + 1)
                 #plot_durations()
