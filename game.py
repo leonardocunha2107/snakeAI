@@ -2,6 +2,7 @@ import numpy as np
 from collections import deque
 import gym
 import random
+import torch
 
 BLACK     = ( 17,  18,  13)
 RED       = (255,   0,   0)
@@ -17,13 +18,15 @@ d2v={d:v for d,v in zip(directions,[(1,0),(-1,0),(0,1),(0,-1)])}
 class SnakeGame(gym.Env):
     SNAKE=1
     FRUIT=2
-    def __init__(self,dim=(10,10)):
+    def __init__(self,dim=(10,10),device='cuda'):
         self.dim=dim
         self.action_space=gym.spaces.Discrete(4)
         self.observation_space=gym.spaces.Box(0,3,shape=self.dim)
         self.reward_range=(-1,1)
         self.reset()
-        
+        self.device=device
+    def get_board(self):
+        return torch.tensor(self.board,device=self.device,dtype=torch.float32)
     def reset(self):
         self.board=np.zeros(self.dim)
         self.snake=deque()
