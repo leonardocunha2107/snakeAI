@@ -48,7 +48,7 @@ def optimize_model(optimizer,agent,target_net):
         param.grad.data.clamp_(-1, 1)
     optimizer.step()
 
-if __name__=='__main__':
+def train(num_episodes):
     BATCH_SIZE = 128
     GAMMA = 0.999
     
@@ -63,7 +63,6 @@ if __name__=='__main__':
     target_net.eval()
     optimizer = optim.RMSprop(agent.net.parameters())
     memory = ReplayMemory(10000)
-    num_episodes = 50
     episode_durations=[]
     for i_episode in range(num_episodes):
         # Initialize the environment and state
@@ -100,4 +99,5 @@ if __name__=='__main__':
 
         if i_episode % TARGET_UPDATE == 0:
             target_net.load_state_dict(agent.net.state_dict())
+    torch.save(agent.net.state_dict(),'model.mdl')
         
