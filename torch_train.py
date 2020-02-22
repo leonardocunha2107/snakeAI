@@ -1,6 +1,6 @@
-from agent import *
+from .agent import *
 import torch.optim as optim
-from game import SnakeGame
+from .game import SnakeGame
 import torch
 from itertools import count
 
