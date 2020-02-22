@@ -4,7 +4,7 @@ from .game import SnakeGame
 import torch
 from itertools import count
 BATCH_SIZE=128
-def optimize_model(optimizer,agent,target_net,memory):
+def optimize_model(optimizer,agent,target_net,memory,device='cuda'):
     if len(memory) < BATCH_SIZE:
         return
     transitions = memory.sample(BATCH_SIZE)
