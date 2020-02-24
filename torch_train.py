@@ -5,12 +5,13 @@ import torch
 from itertools import count
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import torch.nn.functional as F
 BATCH_SIZE=128
 GAMMA = 0.999
 
 def optimize_model(optimizer,agent,target_net,memory,device='cuda'):
     if len(memory) < BATCH_SIZE:
-        return
+        return 0
     transitions = memory.sample(BATCH_SIZE)
     # Transpose the batch (see https://stackoverflow.com/a/19343/3343043 for
     # detailed explanation). This converts batch-array of Transitions
@@ -40,17 +41,18 @@ def optimize_model(optimizer,agent,target_net,memory,device='cuda'):
     next_state_values = torch.zeros(BATCH_SIZE, device=device)
     next_state_values[non_final_mask] = target_net(non_final_next_states).max(1)[0].detach()
     # Compute the expected Q values
-    expected_state_action_values = (next_state_values * GAMMA) + reward_batch
-
+    expected_state_action_values = (next_state_values.unsqueeze(1) * GAMMA) + reward_batch
     # Compute Huber loss
-    loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
-
+    loss = F.smooth_l1_loss(state_action_values, expected_state_action_values)
+    ret=float(loss)
     # Optimize the model
     optimizer.zero_grad()
     loss.backward()
+    
     for param in agent.net.parameters():
         param.grad.data.clamp_(-1, 1)
     optimizer.step()
+    return ret
 
 def train(num_episodes,show_last=5):
     fig=plt.figure()
@@ -77,7 +79,7 @@ def train(num_episodes,show_last=5):
         ims=[]
         if show_last and num_episodes-i_episode<=show_last :
             ims.append([plt.imshow(env.render())])
-            
+        losses=[]
         for t in count():
             # Select and perform an action
 
@@ -100,7 +102,7 @@ def train(num_episodes,show_last=5):
             state = next_state
     
             # Perform one step of the optimization (on the target network)
-            optimize_model(optimizer,agent,target_net,memory)
+            losses.append(optimize_model(optimizer,agent,target_net,memory))
             if ims:
                 ims.append([plt.imshow(env.render())])
 
@@ -112,7 +114,9 @@ def train(num_episodes,show_last=5):
             ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True,
                             repeat_delay=1000)
             plt.show()
-        print(f"Finished episode {i_episode} with {episode_durations[-1]} steps and reward {total_reward}")
+        avg_loss=sum(losses)/len(losses)
+        print(f"Finished episode {i_episode} with {episode_durations[-1]} steps \
+               reward {total_reward} and average loss {avg_loss}")
 
         if i_episode % TARGET_UPDATE == 0:
             target_net.load_state_dict(agent.net.state_dict())

@@ -75,8 +75,9 @@ class SnakeGame(gym.Env):
         snake_tail=self.snake.popleft()
         self.empty.add(snake_tail)
         self.board[snake_tail]=0
-        rwd=(self.t-self.last_t_eat-self.d)
-        rwd=-np.sqrt(rwd)/np.sqrt(self.d)/8 if rwd >0 else 0
+        #rwd=(self.t-self.last_t_eat-self.d)
+        #rwd=-np.sqrt(rwd)/np.sqrt(self.d)/8 if rwd >0 else 0
+        rwd=0
         return self.board,rwd,False,{}
     """
         renders the game.
