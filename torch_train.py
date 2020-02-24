@@ -3,7 +3,8 @@ import torch.optim as optim
 from .game import SnakeGame
 import torch
 from itertools import count
-
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 BATCH_SIZE=128
 GAMMA = 0.999
 
@@ -51,27 +52,35 @@ def optimize_model(optimizer,agent,target_net,memory,device='cuda'):
         param.grad.data.clamp_(-1, 1)
     optimizer.step()
 
-def train(num_episodes):
-    
+def train(num_episodes,show_last=5):
+    fig=plt.figure()
     TARGET_UPDATE = 10
     BOARD_SHAPE=(10,10)
     
     device='cuda'
     env=SnakeGame(dim=BOARD_SHAPE)
     agent=DQNAgent(BOARD_SHAPE)
-    target_net=SimpleDQN(BOARD_SHAPE).to(device)
+    target_net=DQN(BOARD_SHAPE[0],BOARD_SHAPE[1],4).to(device)
     target_net.load_state_dict(agent.net.state_dict())
     target_net.eval()
     optimizer = optim.RMSprop(agent.net.parameters())
     memory = ReplayMemory(10000)
     episode_durations=[]
+    
+    fig = plt.figure()
+    
     for i_episode in range(num_episodes):
         # Initialize the environment and state
         env.reset()
         state = env.get_board()
         total_reward=0
+        ims=[]
+        if show_last and num_episodes-i_episode<=show_last :
+            ims.append([plt.imshow(env.render())])
+            
         for t in count():
             # Select and perform an action
+
             action = agent.select_action(state)
             _, reward, done, _ = env.step(action.item())
             total_reward+=reward
@@ -92,13 +101,22 @@ def train(num_episodes):
     
             # Perform one step of the optimization (on the target network)
             optimize_model(optimizer,agent,target_net,memory)
+            if ims:
+                ims.append([plt.imshow(env.render())])
+
             if done:
                 episode_durations.append(t + 1)
                 #plot_durations()
                 break
+        if ims:
+            ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True,
+                            repeat_delay=1000)
+            plt.show()
         print(f"Finished episode {i_episode} with {episode_durations[-1]} steps and reward {total_reward}")
 
         if i_episode % TARGET_UPDATE == 0:
             target_net.load_state_dict(agent.net.state_dict())
     torch.save(agent.net.state_dict(),'model.mdl')
-        
+    
+if __name__=='__main__':
+    train(50)

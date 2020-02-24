@@ -4,9 +4,9 @@ import torch.nn.functional as F
 import random
 import torch
 import math
-EPS_START = 0.9
+EPS_START = 0.2
 EPS_END = 0.05
-EPS_DECAY = 200
+EPS_DECAY = 2000
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 device=torch.cuda.device(0)
@@ -34,16 +34,17 @@ class DQN(nn.Module):
 
     def __init__(self, h, w, outputs):
         super(DQN, self).__init__()
-        self.conv1 = nn.Conv2d(3, 16, kernel_size=5, stride=2)
+        self.h,self.w=h,w
+        self.conv1 = nn.Conv2d(1, 16, kernel_size=2, stride=1)
         self.bn1 = nn.BatchNorm2d(16)
-        self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=2, stride=1)
         self.bn2 = nn.BatchNorm2d(32)
-        self.conv3 = nn.Conv2d(32, 32, kernel_size=5, stride=2)
+        self.conv3 = nn.Conv2d(32, 32, kernel_size=2, stride=1)
         self.bn3 = nn.BatchNorm2d(32)
 
         # Number of Linear input connections depends on output of conv2d layers
         # and therefore the input image size, so compute it.
-        def conv2d_size_out(size, kernel_size = 5, stride = 2):
+        def conv2d_size_out(size, kernel_size = 2, stride = 1):
             return (size - (kernel_size - 1) - 1) // stride  + 1
         convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(w)))
         convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(h)))
@@ -53,6 +54,11 @@ class DQN(nn.Module):
     # Called with either one element to determine next action, or a batch
     # during optimization. Returns tensor([[left0exp,right0exp]...]).
     def forward(self, x):
+        if len(x.shape)==2:
+            x=x.view(1,1,self.h,self.w)
+        else:
+            x=x.view(x.shape[0],1,self.h,self.w)
+
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
@@ -79,12 +85,15 @@ class ReplayMemory(object):
         return len(self.memory)
     
 class DQNAgent:
-    def __init__(self,board_shape,device='cuda',n_actions=4):
+    def __init__(self,board_shape,model='cnn',device='cuda',n_actions=4):
         self.batch_size=128
         self.gamma=0.999
         self.n_actions=n_actions
         self.device=device
-        self.net=SimpleDQN(board_shape,n_actions=n_actions).to('cuda')
+        if model=='cnn':
+            self.net =DQN(board_shape[0],board_shape[1],n_actions).to(device)
+        else:
+            self.net=SimpleDQN(board_shape,n_actions=n_actions).to(device)
         self.steps_done=0
     def select_action(self,state):
         sample = random.random()
