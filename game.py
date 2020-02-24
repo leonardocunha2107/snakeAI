@@ -62,7 +62,7 @@ class SnakeGame(gym.Env):
         if self.t-self.last_t_eat>100:
             return self.board,-2.,True,{}
         if  self.board[snake_head]==self.SNAKE:
-            return self.board,-0.25.,True,{}
+            return self.board,-0.25,True,{}
         
         self.snake.append(snake_head)
         self.board[snake_head]=self.SNAKE
