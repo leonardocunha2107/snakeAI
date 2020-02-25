@@ -60,8 +60,8 @@ def train(num_episodes,show_last=5):
     BOARD_SHAPE=(10,10)
     
     device='cuda'
-    env=SnakeGame(dim=BOARD_SHAPE)
-    agent=DQNAgent(BOARD_SHAPE)
+    #env=SnakeGame(dim=BOARD_SHAPE)
+    agent=DQNAgent(BOARD_SHAPE,n_actions=)
     target_net=DQN(BOARD_SHAPE[0],BOARD_SHAPE[1],4).to(device)
     target_net.load_state_dict(agent.net.state_dict())
     target_net.eval()
@@ -80,6 +80,7 @@ def train(num_episodes,show_last=5):
         if show_last and num_episodes-i_episode<=show_last :
             ims.append([plt.imshow(env.render())])
         losses=[]
+
         for t in count():
             # Select and perform an action
 

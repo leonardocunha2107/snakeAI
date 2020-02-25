@@ -32,10 +32,10 @@ class SimpleDQN(nn.Module):
     
 class DQN(nn.Module):
 
-    def __init__(self, h, w, outputs):
+    def __init__(self, h, w, outputs,n_channels=1):
         super(DQN, self).__init__()
-        self.h,self.w=h,w
-        self.conv1 = nn.Conv2d(1, 16, kernel_size=2, stride=1)
+        self.h,self.w,self.n_channels=h,w,n_channels
+        self.conv1 = nn.Conv2d(n_channels, 16, kernel_size=2, stride=1)
         self.bn1 = nn.BatchNorm2d(16)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=2, stride=1)
         self.bn2 = nn.BatchNorm2d(32)
@@ -57,7 +57,7 @@ class DQN(nn.Module):
         if len(x.shape)==2:
             x=x.view(1,1,self.h,self.w)
         else:
-            x=x.view(x.shape[0],1,self.h,self.w)
+            x=x.view(x.shape[0],self.n_channels,self.h,self.w)
 
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
@@ -85,7 +85,7 @@ class ReplayMemory(object):
     
         return len(self.memory)
     
-class DQNAgent:
+class Agent:
     def __init__(self,board_shape,model='cnn',device='cuda',n_actions=4):
         self.batch_size=128
         self.gamma=0.999

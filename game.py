@@ -31,7 +31,7 @@ class SnakeGame(gym.Env):
         self.device=device
 
     def get_board(self):
-        return torch.tensor(self.board,device=self.device,dtype=torch.float32)
+        return torch.tensor(self.board,device=self.device,dtype=torch.float32).unsqueeze(0).unsqueeze(0)
     def reset(self):
         self.board=np.zeros(self.dim)
         self.snake=deque()
@@ -59,10 +59,10 @@ class SnakeGame(gym.Env):
         self.t+=1
         self.snake.append(snake_head)
         snake_head=tuple(((snake_head[i]+directions[action][i])%self.dim[i] for i in [0,1]))
-        if self.t-self.last_t_eat>100:
-            return self.board,-2.,True,{}
+        #if self.t-self.last_t_eat>100:
+        #   return self.get_board(),-2.,True,{}
         if  self.board[snake_head]==self.SNAKE:
-            return self.board,-0.25,True,{}
+            return self.get_board(),-0.25,True,{}
         
         self.snake.append(snake_head)
         self.board[snake_head]=self.SNAKE
@@ -71,7 +71,7 @@ class SnakeGame(gym.Env):
             self.board[self.fruit]=self.FRUIT
             self.d=taxi_distance(snake_head,self.fruit)
             self.last_t_eat=self.t
-            return self.board,1,len(self.snake)==self.dim[0]*self.dim[1],{}
+            return self.get_board(),1,len(self.snake)==self.dim[0]*self.dim[1],{}
         
         snake_tail=self.snake.popleft()
         self.empty.add(snake_tail)
@@ -79,7 +79,7 @@ class SnakeGame(gym.Env):
         #rwd=(self.t-self.last_t_eat-self.d)
         #rwd=-np.sqrt(rwd)/np.sqrt(self.d)/8 if rwd >0 else 0
         rwd=0
-        return self.board,rwd,False,{}
+        return self.get_board(),rwd,False,{}
     """
         renders the game.
         Creates a rgb array with the colors corresponding to the current state of the game
