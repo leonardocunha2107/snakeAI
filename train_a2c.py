@@ -7,7 +7,7 @@ import os
 import torch
 from torch.distributions import Categorical
 
-BOARD_SHAPE=(10,10)
+BOARD_SHAPE=(5,5)
 UPDATE_STEPS=10
 GAMMA=0.999
 SAVE_EVERY_EPS=100
@@ -21,7 +21,7 @@ def train(num_episodes,save_dir='model/',lr=1e-3):
         
     device= 'cuda' if torch.cuda.is_available() else 'cpu'
     env=SnakeGame(BOARD_SHAPE,device=device)
-    model=A2CModel(BOARD_SHAPE).to(device)
+    model=A2CModel(BOARD_SHAPE,in_channels=3).to(device)
     a2c=A2C(model,GAMMA)
     trajectories = TrajectoryStore(device)
     optimizer=torch.optim.Adam(model.parameters(),lr=lr)

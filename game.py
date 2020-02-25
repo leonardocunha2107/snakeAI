@@ -31,7 +31,13 @@ class SnakeGame(gym.Env):
         self.device=device
 
     def get_board(self):
-        return torch.tensor(self.board,device=self.device,dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+        tb=torch.zeros(1,3,self.dim[0],self.dim[1],dtype=torch.float,device=self.device)
+        tb[(0,0)+self.fruit]=1
+        tb[(0,1)+self.snake[-1]]=1
+        for tup in self.snake:
+            tb[(0,2)+tup]=1
+        return tb
+        #return torch.tensor(self.board,device=self.device,dtype=torch.float32).unsqueeze(0).unsqueeze(0)
     def reset(self):
         self.board=np.zeros(self.dim)
         self.snake=deque()
@@ -55,9 +61,8 @@ class SnakeGame(gym.Env):
         return pos[0]
 
     def step(self,action):
-        snake_head=self.snake.pop()
+        snake_head=self.snake[-1]
         self.t+=1
-        self.snake.append(snake_head)
         snake_head=tuple(((snake_head[i]+directions[action][i])%self.dim[i] for i in [0,1]))
         #if self.t-self.last_t_eat>100:
         #   return self.get_board(),-2.,True,{}
