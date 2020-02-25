@@ -53,6 +53,8 @@ class SnakeGame(gym.Env):
         self.t=0
         self.last_t_eat=0
         self.d=taxi_distance(snake_head,self.fruit)
+        self.last_move=None
+        
         return self.board
     
     def random_pos(self):
@@ -64,8 +66,11 @@ class SnakeGame(gym.Env):
         snake_head=self.snake[-1]
         self.t+=1
         snake_head=tuple(((snake_head[i]+directions[action][i])%self.dim[i] for i in [0,1]))
-        #if self.t-self.last_t_eat>100:
-        #   return self.get_board(),-2.,True,{}
+        
+        if action%4==self.last_move%4:
+            return self.get_board(),-0.5,False,{}
+        
+        self.last_move=action
         if  self.board[snake_head]==self.SNAKE:
             return self.get_board(),-0.25,True,{}
         
