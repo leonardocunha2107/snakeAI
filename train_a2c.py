@@ -15,7 +15,7 @@ SAVE_EVERY_EPS=100
 def train(num_episodes,save_dir='model/',lr=1e-3):
     if save_dir:
         if os.path.exists(save_dir):
-            print (f"Removing previous model at thefolder {save_dir}")
+            print (f"Removing previous model at the folder {save_dir}")
             os.rmdir(save_dir)
         os.mkdir(save_dir)
         
