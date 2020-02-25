@@ -67,8 +67,8 @@ class SnakeGame(gym.Env):
         self.t+=1
         snake_head=tuple(((snake_head[i]+directions[action][i])%self.dim[i] for i in [0,1]))
         
-        if self.last_move and action%4==self.last_move%4:
-            return self.get_board(),-0.5,False,{}
+        if len(self.snake)>1 and action%2==self.last_move%2 and action!=self.last_move:
+            return self.get_board(),-0.2,False,{}
         
         self.last_move=action
         if  self.board[snake_head]==self.SNAKE:

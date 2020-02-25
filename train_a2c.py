@@ -1,7 +1,7 @@
 ##Inspired by the work of Oscar Knagg, oscar@knagg.co.uk
 
-from .a2c import TrajectoryStore, A2C, A2CModel
-from .game import SnakeGame
+from a2c import TrajectoryStore, A2C, A2CModel
+from game import SnakeGame
 from itertools import count
 import os
 import torch
@@ -12,7 +12,7 @@ UPDATE_STEPS=10
 GAMMA=0.999
 SAVE_EVERY_EPS=100
 
-def train(num_episodes,save_dir='model/',lr=1e-3):
+def train(num_episodes,save_dir='model/',lr=1e-6):
     if save_dir:
         if os.path.exists(save_dir):
             print (f"Removing previous model at the folder {save_dir}")
@@ -77,7 +77,7 @@ def train(num_episodes,save_dir='model/',lr=1e-3):
             
         
 if __name__=='__main__':
-    train(10)      
+    train(2000)      
         
 
     
