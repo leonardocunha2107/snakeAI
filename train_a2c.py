@@ -7,6 +7,9 @@ import os
 import torch
 from torch.distributions import Categorical
 import shutil
+import numpy as np
+import matplotlib.pyplot as plt
+import
 
 UPDATE_STEPS=10
 GAMMA=0.999
@@ -14,15 +17,18 @@ SAVE_EVERY_EPS=100
 
 class Logger:
     
-    def __init__(self,model):
-        keys=['loss','reward']
+    def __init__(self,name):
+        keys=['loss','reward','snake_size']
+        os.path.mkdir()
         self.store={k:[] for k in keys}
         self.steps_per_eps=[1]
+        self.n_steps=0
     def push(self,done,**kwargs):
         ##To be called every step
+        self.n_steps+=1
         for k,v in kwargs.items():
             if k in self.store:
-                self.
+                self.store[k].append(v)
         if done:
             self.steps_per_eps.append(1)
         else:
@@ -30,11 +36,14 @@ class Logger:
         if 'model' in kwargs:
             pass
         if 'env' in kwargs:
-            pass
-                    
-
-def train(num_episodes,board_shape=(5,5),lr=1e-4,**kwargs):
-
+            self.store.snake_size.append()
+    def moving_average(a, n=3) :
+        ret = np.cumsum(a, dtype=float)
+        ret[n:] = ret[n:] - ret[:-n]
+        return ret[n - 1:] / n           
+    def save(self,model):
+def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
+    assert not os.path.exists(name+'.json')
     save_dir=kwargs.get('save_dir','model/')
     optimizer=kwargs.get('optim',torch.optim.Adam)
     if save_dir:
