@@ -18,10 +18,10 @@ def moving_average(a, window_size=200) :
 
 class Logger:
     
-    def __init__(self,name,plot_every=100):
+    def __init__(self,name,path='',plot_every=100):
         self.name=name
         self.plot_every=plot_every
-        
+        self.path=path
         self.keys=['loss','reward','snake_size']
         self.store={k:[] for k in self.keys}
         self.temp={k:[] for k in self.keys}
@@ -94,16 +94,16 @@ class Logger:
     
           
     def save(self):
-        with open(self.name+'.json','w+') as fd:
+        with open(self.path+self.name+'.json','w+') as fd:
             json.dump(self.store,fd,indent=2)
-        self.fig.savefig(self.name+'.png')
+        self.fig.savefig(self.path+self.name+'.png')
 
 def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
     ##extract args
     
     in_channels=3
     save_dir=kwargs.get('save_dir','model/')
-    optimizer=kwargs.get('optim',torch.optim.Adam)
+    optimizer=kwargs.get('optim',torch.optim.AdamW)
     wall=kwargs.get('wall',False)
     store_render=kwargs.get('store_render',False)
     plot_every=kwargs.get('plot_every',100)
@@ -111,16 +111,17 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
     GAMMA=kwargs.get('GAMMA',0.99)
     SAVE_EVERY_EPS=kwargs.get('SAVE_EVERY_EPS',1000)
     plot_every=kwargs.get('plot_every',100)
-    
+    path=kwargs.get('path','')
     model=kwargs.get('model',FancyModel(num_actions=4, num_initial_convs=2, in_channels=in_channels, conv_channels=32,
                              num_residual_convs=2, num_feedforward=1, feedforward_dim=64))
     
     ##clear directory where we'll save our models
-    if save_dir:
+    """if save_dir:
         if os.path.exists(save_dir):
             print (f"Removing previous model at the folder {save_dir}")
             shutil.rmtree(save_dir)
         os.mkdir(save_dir)
+    """
     ##Create Main objects
     device= 'cuda' if torch.cuda.is_available() else 'cpu'
     model=model.to(device)
@@ -128,7 +129,7 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
     a2c=A2C(model,GAMMA)
     trajectories = TrajectoryStore(device)
     optimizer=optimizer(model.parameters(),lr=lr)
-    logger=Logger(name,plot_every)
+    logger=Logger(name,path,plot_every)
     
     num_eps=0
     state=env.get_board()
@@ -177,7 +178,7 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
             num_eps+=1
             if num_eps%SAVE_EVERY_EPS==0 or num_eps==num_episodes:
                 logger.save()
-                torch.save(model.state_dict(),save_dir+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
+                torch.save(model.state_dict(),path+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
         if num_eps==num_episodes:
             print("Finished")
             break
