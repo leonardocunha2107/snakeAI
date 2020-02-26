@@ -9,7 +9,7 @@ from torch.distributions import Categorical
 import shutil
 import numpy as np
 import matplotlib.pyplot as plt
-import
+
 
 UPDATE_STEPS=10
 GAMMA=0.999
@@ -52,7 +52,7 @@ class Logger:
         pass
 
 def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
-    
+    in_channels=3
     save_dir=kwargs.get('save_dir','model/')
     optimizer=kwargs.get('optim',torch.optim.Adam)
     model=kwargs.get('model',FancyModel(num_actions=4, num_initial_convs=2, in_channels=in_channels, conv_channels=32,

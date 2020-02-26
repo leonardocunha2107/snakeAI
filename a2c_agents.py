@@ -4,7 +4,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from typing import Callable
-
+from modules import ConvBlock, feedforward_block
 EPS = 1e-8
 
 class A2CModel(nn.Module):
@@ -114,7 +114,7 @@ class FancyModel(nn.Module):
                  num_actions: int,
                  conv_channels: int = 16,
                  num_heads: int = 1):
-        super(ConvAgent, self).__init__()
+        super(FancyModel, self).__init__()
         self.in_channels = in_channels
         self.num_initial_convs = num_initial_convs
         self.num_residual_convs = num_residual_convs
