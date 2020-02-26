@@ -1,6 +1,6 @@
 ##Inspired by the work of Oscar Knagg, oscar@knagg.co.uk
 
-from a2c_agents import TrajectoryStore, A2C, A2CModel
+from a2c_agents import TrajectoryStore, A2C, A2CModel,FancyModel
 from game import SnakeGame
 from itertools import count
 import os
@@ -43,17 +43,20 @@ class Logger:
             pass
         if 'env' in kwargs:
             self.store.snake_size.append()
+            
     def per_episode(self,key):
         
     
           
-    def save(self,model):
+    def save(self):
         pass
 
-def train(num_episodes,name,board_shape=(5,5),lr=1e-4,log=False,**kwargs):
-    if log: assert not os.path.exists(name)
+def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
+    
     save_dir=kwargs.get('save_dir','model/')
     optimizer=kwargs.get('optim',torch.optim.Adam)
+    model=kwargs.get('model',FancyModel(num_actions=4, num_initial_convs=2, in_channels=in_channels, conv_channels=32,
+                             num_residual_convs=2, num_feedforward=1, feedforward_dim=64))
     if save_dir:
         if os.path.exists(save_dir):
             print (f"Removing previous model at the folder {save_dir}")
@@ -61,8 +64,8 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,log=False,**kwargs):
         os.mkdir(save_dir)
     
     device= 'cuda' if torch.cuda.is_available() else 'cpu'
+    model=model.to(device)
     env=SnakeGame(board_shape,device=device)
-    model=A2CModel(board_shape,in_channels=3).to(device)
     a2c=A2C(model,GAMMA)
     trajectories = TrajectoryStore(device)
     optimizer=optimizer(model.parameters(),lr=lr)
@@ -94,6 +97,7 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,log=False,**kwargs):
             ## Compute losses and update model
             with torch.no_grad():
                 _, bootstrap_values = model(state)
+                
             value_loss, policy_loss = a2c.loss(bootstrap_values, trajectories.rewards, trajectories.values,
                                            trajectories.log_probs, trajectories.dones)
             ##Loss based on pi(s) entropy
@@ -107,8 +111,8 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,log=False,**kwargs):
 
             trajectories.clear()
         
-        Logger.push(done,model=model,env=env,reward=reward,
-                    loss=loss.data() if loss else None)
+        #Logger.push(done,model=model,env=env,reward=reward,
+         #           loss=loss.data if loss else None)
         if done: 
             num_eps+=1
             env.reset()
