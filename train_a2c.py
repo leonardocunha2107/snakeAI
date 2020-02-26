@@ -23,6 +23,12 @@ class Logger:
         self.store={k:[] for k in keys}
         self.steps_per_eps=[1]
         self.n_steps=0
+        
+    def moving_average(a, window_size=100) :
+        ret = np.cumsum(np.array(a), dtype=float)
+        ret[window_size:] = ret[window_size:] - ret[:-window_size]
+        return ret[window_size - 1:] / window_size
+    
     def push(self,done,**kwargs):
         ##To be called every step
         self.n_steps+=1
@@ -37,13 +43,15 @@ class Logger:
             pass
         if 'env' in kwargs:
             self.store.snake_size.append()
-    def moving_average(a, n=3) :
-        ret = np.cumsum(a, dtype=float)
-        ret[n:] = ret[n:] - ret[:-n]
-        return ret[n - 1:] / n           
+    def per_episode(self,key):
+        
+    
+          
     def save(self,model):
-def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
-    assert not os.path.exists(name+'.json')
+        pass
+
+def train(num_episodes,name,board_shape=(5,5),lr=1e-4,log=False,**kwargs):
+    if log: assert not os.path.exists(name)
     save_dir=kwargs.get('save_dir','model/')
     optimizer=kwargs.get('optim',torch.optim.Adam)
     if save_dir:
