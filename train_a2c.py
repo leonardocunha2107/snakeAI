@@ -9,69 +9,128 @@ from torch.distributions import Categorical
 import shutil
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
-
-UPDATE_STEPS=10
-GAMMA=0.999
-SAVE_EVERY_EPS=100
-
-class Logger:
-    
-    def __init__(self,name):
-        keys=['loss','reward','snake_size']
-        os.path.mkdir()
-        self.store={k:[] for k in keys}
-        self.steps_per_eps=[1]
-        self.n_steps=0
-        
-    def moving_average(a, window_size=100) :
+def moving_average(a, window_size=200) :
         ret = np.cumsum(np.array(a), dtype=float)
         ret[window_size:] = ret[window_size:] - ret[:-window_size]
         return ret[window_size - 1:] / window_size
+
+class Logger:
+    
+    def __init__(self,name,plot_every=100):
+        self.name=name
+        self.plot_every=plot_every
+        
+        self.keys=['loss','reward','snake_size']
+        self.store={k:[] for k in self.keys}
+        self.temp={k:[] for k in self.keys}
+        self.rps=[]  ##reward per step
+        self.steps_per_eps=[1]
+        self.n_steps=0
+        self.max_reward=0
+        self.best_game=None
+        self.num_eps=0
+        
+        self.fig=plt.figure(figsize=(9.,8.))
+        
     
     def push(self,done,**kwargs):
         ##To be called every step
         self.n_steps+=1
         for k,v in kwargs.items():
-            if k in self.store:
-                self.store[k].append(v)
-        if done:
-            self.steps_per_eps.append(1)
-        else:
-            self.steps_per_eps[-1]+=1
-        if 'model' in kwargs:
-            pass
+            if k in self.temp:
+                self.temp[k].append(v)
         if 'env' in kwargs:
-            self.store.snake_size.append()
+            self.temp['snake_size'].append(len(kwargs['env'].snake))
+        if 'model' in kwargs:
+            pass  ##TODO
+        
+        ## If the episode we were logging is over
+        if done:
+            aux=[t for t in self.temp['loss'] if t]
+            self.store['loss'].append(sum(aux)/len(aux))
+            self.store['snake_size'].append(self.temp['snake_size'][-1])
+            aux=self.temp['reward']
+            self.rps.extend(aux)
+            self.store['reward'].append(sum(aux)/len(aux))
+            if self.store['reward'][-1]>self.max_reward:
+                self.max_reward=self.store['reward'][-1]
+                if 'env' in kwargs and kwargs['env'].store_render:
+                    self.best_game=kwargs['env'].board_store
+            self.steps_per_eps.append(1)
+            self.temp={k:[] for k in self.keys}
+            self.num_eps+=1
+            if self.num_eps%self.plot_every==0:
+                self.plot()
+
             
-    def per_episode(self,key):
-        pass
+            
+        else: self.steps_per_eps[-1]+=1
+        
+        
+                    
+    def plot(self):
+        self.fig.clear()
+        ((rps_ax,rpe_ax,snake_ax),(steps_ax,loss_ax,_))=self.fig.subplots(2,3)
+        
+        rps_ax.set_title('Reward per Step (Moving Average)')
+        rps_ax.plot(moving_average(self.rps))
+        
+        rpe_ax.set_title('Reward per episode')
+        rpe_ax.plot(self.store['reward'])
+        
+        snake_ax.set_title('Snake size')
+        snake_ax.plot(self.store['snake_size'])
+
+        steps_ax.set_title('Steps per episode')
+        steps_ax.plot(self.steps_per_eps)
+        
+        loss_ax.set_title('Loss')
+        loss_ax.plot(self.store['loss'])
+        
+        self.fig.show()
+        
     
           
     def save(self):
-        pass
+        with open(self.name+'.json','w+') as fd:
+            json.dump(self.store,fd,indent=2)
+        self.fig.savefig(self.name+'.png')
 
 def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
+    ##extract args
+    
     in_channels=3
     save_dir=kwargs.get('save_dir','model/')
     optimizer=kwargs.get('optim',torch.optim.Adam)
+    wall=kwargs.get('wall',False)
+    store_render=kwargs.get('store_render',False)
+    plot_every=kwargs.get('plot_every',100)
+    UPDATE_STEPS=kwargs.get('UPDATE_STEPS',20)
+    GAMMA=kwargs.get('GAMMA',0.99)
+    SAVE_EVERY_EPS=kwargs.get('SAVE_EVERY_EPS',1000)
+    plot_every=kwargs.get('plot_every',100)
+    
     model=kwargs.get('model',FancyModel(num_actions=4, num_initial_convs=2, in_channels=in_channels, conv_channels=32,
                              num_residual_convs=2, num_feedforward=1, feedforward_dim=64))
-    wall=kwargs.get('wall',False)
+    
+    ##clear directory where we'll save our models
     if save_dir:
         if os.path.exists(save_dir):
             print (f"Removing previous model at the folder {save_dir}")
             shutil.rmtree(save_dir)
         os.mkdir(save_dir)
-    
+    ##Create Main objects
     device= 'cuda' if torch.cuda.is_available() else 'cpu'
     model=model.to(device)
-    env=SnakeGame(board_shape,walls=wall,device=device)
+    env=SnakeGame(board_shape,walls=wall,device=device,store_render=store_render)
     a2c=A2C(model,GAMMA)
     trajectories = TrajectoryStore(device)
     optimizer=optimizer(model.parameters(),lr=lr)
-    num_steps,num_eps=0,0
-    last_step,total_reward=0,0
+    logger=Logger(name,plot_every)
+    
+    num_eps=0
     state=env.get_board()
     
     for i_step in count(1):
@@ -83,7 +142,6 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
         action = action_distribution.sample().clone().long()
         
         state, reward, done, _ = env.step(action)
-        total_reward+=reward
         trajectories.append(
             action=action,
             log_prob=action_distribution.log_prob(action),
@@ -112,15 +170,14 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
 
             trajectories.clear()
         
-        #Logger.push(done,model=model,env=env,reward=reward,
-         #           loss=loss.data if loss else None)
+        logger.push(done,model=model,env=env,reward=reward,
+                   loss=float(loss) if loss else None)
         if done: 
-            num_eps+=1
             env.reset()
-            last_step,total_reward=i_step,0
-            
-            if num_eps%SAVE_EVERY_EPS==0:
-                torch.save(model.state_dict(),save_dir+f'{int(num_steps/SAVE_EVERY_EPS)}.mdl')
+            num_eps+=1
+            if num_eps%SAVE_EVERY_EPS==0 or num_eps==num_episodes:
+                logger.save()
+                torch.save(model.state_dict(),save_dir+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
         if num_eps==num_episodes:
             print("Finished")
             break
@@ -128,7 +185,7 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
             
         
 if __name__=='__main__':
-    train(2000)      
+    train(50,'Local_Test',plot_every=5)      
         
 
     

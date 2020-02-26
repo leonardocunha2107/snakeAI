@@ -4,6 +4,8 @@ import gym
 import random
 import torch
 
+SNAKE=1
+FRUIT=2
 BLACK     = ( 17.,  18.,  13.)
 RED       = (255.,   0.,   0.)
 GREEN     = (  0., 255.,   0.)
@@ -16,19 +18,19 @@ def taxi_distance(t1,t2):
     for  x,y in zip(t1,t2):
         s+=abs(x-y)
     return s
-
+    
 class SnakeGame(gym.Env):
-    SNAKE=1
-    FRUIT=2
-    def __init__(self,dim=(10,10),walls=False,device='cuda'):
+    def __init__(self,dim=(10,10),walls=False,store_render=False,device='cuda'):
         self.dim=dim
         self.action_space=gym.spaces.Discrete(4)
         self.observation_space=gym.spaces.Box(0,3,shape=self.dim)
         self.reward_range=(-1,1)
-        self.reset()
         self.device=device
         self.walls=walls
-
+        self.store_render=store_render
+        self.reset()
+        
+        
     def get_board(self):
         tb=torch.zeros(1,3,self.dim[0],self.dim[1],dtype=torch.float,device=self.device)
         tb[(0,0)+self.fruit]=1
@@ -44,16 +46,16 @@ class SnakeGame(gym.Env):
         snake_head=self.random_pos()
         
         self.snake.append(snake_head)
-        self.board[snake_head]=self.SNAKE
+        self.board[snake_head]=SNAKE
         
         self.fruit=self.random_pos()
-        self.board[self.fruit]=self.FRUIT
+        self.board[self.fruit]=FRUIT
         
         self.t=0
         self.last_t_eat=0
         self.d=taxi_distance(snake_head,self.fruit)
         self.last_move=None
-        
+        if self.store_render: self.board_store=[self.render()]
         return self.board
     
     def random_pos(self):
@@ -71,25 +73,24 @@ class SnakeGame(gym.Env):
         if len(self.snake)>1 and action%2==self.last_move%2 and action!=self.last_move:
             return self.get_board(),-0.2,False,{}
         self.last_move=action
-        if  self.board[snake_head]==self.SNAKE:
+        if  self.board[snake_head]==SNAKE:
             return self.get_board(),-0.25,True,{}
         
         self.snake.append(snake_head)
-        self.board[snake_head]=self.SNAKE
+        self.board[snake_head]=SNAKE
         if snake_head==self.fruit:
             self.fruit=self.random_pos()
-            self.board[self.fruit]=self.FRUIT
+            self.board[self.fruit]=FRUIT
             self.d=taxi_distance(snake_head,self.fruit)
             self.last_t_eat=self.t
+            if self.store_render: self.board_store.append(self.render())
             return self.get_board(),1,len(self.snake)==self.dim[0]*self.dim[1],{}
         
         snake_tail=self.snake.popleft()
         self.empty.add(snake_tail)
         self.board[snake_tail]=0
-        #rwd=(self.t-self.last_t_eat-self.d)
-        #rwd=-np.sqrt(rwd)/np.sqrt(self.d)/8 if rwd >0 else 0
-        rwd=0
-        return self.get_board(),rwd,False,{}
+        if self.store_render: self.board_store.append(self.render())
+        return self.get_board(),0,False,{}
     """
         renders the game.
         Creates a rgb array with the colors corresponding to the current state of the game
@@ -97,27 +98,23 @@ class SnakeGame(gym.Env):
         @:parameter mode mode of render request
                          'rgb' : @return array of rgb
     """
-    def render(self, mode = 'rgb'):
-        if mode =='rgb':
+    def render(self):
             #grid = np.zeros((self.dim[0],self.dim[1],3))
             grid = np.zeros((self.dim[0],self.dim[1]), dtype = (int,3))
             
             for i in range(self.dim[0]):
                 for j in range(self.dim[1]):
-                    if self.board[i,j] == self.SNAKE:
+                    if self.board[i,j] == SNAKE:
                         grid[i,j] = np.array(GREEN)
-                    elif self.board[i,j] == self.FRUIT:
+                    elif self.board[i,j] == FRUIT:
                         grid[i,j] = np.array(RED)
             
             #We use a different color to the snake's head:
-            head = self.snake.pop()
+            head = self.snake[-1]
             grid[head[0],head[1]] = np.array(WHITE)
-            self.snake.append(head)
 
             return grid
-        else:
-            raise('error: function not implemented')
-            return -1
+
         
         
 
