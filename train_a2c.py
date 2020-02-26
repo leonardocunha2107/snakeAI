@@ -1,30 +1,54 @@
 ##Inspired by the work of Oscar Knagg, oscar@knagg.co.uk
 
-from a2c import TrajectoryStore, A2C, A2CModel
+from a2c_agents import TrajectoryStore, A2C, A2CModel
 from game import SnakeGame
 from itertools import count
 import os
 import torch
 from torch.distributions import Categorical
+import shutil
 
-BOARD_SHAPE=(5,5)
 UPDATE_STEPS=10
 GAMMA=0.999
 SAVE_EVERY_EPS=100
 
-def train(num_episodes,save_dir='model/',lr=1e-6):
+class Logger:
+    
+    def __init__(self,model):
+        keys=['loss','reward']
+        self.store={k:[] for k in keys}
+        self.steps_per_eps=[1]
+    def push(self,done,**kwargs):
+        ##To be called every step
+        for k,v in kwargs.items():
+            if k in self.store:
+                self.
+        if done:
+            self.steps_per_eps.append(1)
+        else:
+            self.steps_per_eps[-1]+=1
+        if 'model' in kwargs:
+            pass
+        if 'env' in kwargs:
+            pass
+                    
+
+def train(num_episodes,board_shape=(5,5),lr=1e-4,**kwargs):
+
+    save_dir=kwargs.get('save_dir','model/')
+    optimizer=kwargs.get('optim',torch.optim.Adam)
     if save_dir:
         if os.path.exists(save_dir):
             print (f"Removing previous model at the folder {save_dir}")
-            os.rmdir(save_dir)
+            shutil.rmtree(save_dir)
         os.mkdir(save_dir)
-        
+    
     device= 'cuda' if torch.cuda.is_available() else 'cpu'
-    env=SnakeGame(BOARD_SHAPE,device=device)
-    model=A2CModel(BOARD_SHAPE,in_channels=3).to(device)
+    env=SnakeGame(board_shape,device=device)
+    model=A2CModel(board_shape,in_channels=3).to(device)
     a2c=A2C(model,GAMMA)
     trajectories = TrajectoryStore(device)
-    optimizer=torch.optim.Adam(model.parameters(),lr=lr)
+    optimizer=optimizer(model.parameters(),lr=lr)
     num_steps,num_eps=0,0
     last_step,total_reward=0,0
     state=env.get_board()
@@ -48,16 +72,7 @@ def train(num_episodes,save_dir='model/',lr=1e-6):
             entropy=entropy
         )
         
-        if done: 
-            num_eps+=1
-            s=f'Done with eps {num_eps} with reward {total_reward} and '
-            s+=f'{i_step-last_step} steps'
-            print(s)
-            env.reset()
-            last_step,total_reward=i_step,0
-            
-            if num_eps%SAVE_EVERY_EPS==0:
-                torch.save(model.state_dict(),save_dir+f'{int(num_steps/SAVE_EVERY_EPS)}.mdl')
+        loss=None
         if  i_step%UPDATE_STEPS==0:
             ## Compute losses and update model
             with torch.no_grad():
@@ -74,6 +89,20 @@ def train(num_episodes,save_dir='model/',lr=1e-6):
             optimizer.step()
 
             trajectories.clear()
+        
+        Logger.push(done,model=model,env=env,reward=reward,
+                    loss=loss.data() if loss else None)
+        if done: 
+            num_eps+=1
+            env.reset()
+            last_step,total_reward=i_step,0
+            
+            if num_eps%SAVE_EVERY_EPS==0:
+                torch.save(model.state_dict(),save_dir+f'{int(num_steps/SAVE_EVERY_EPS)}.mdl')
+        if num_eps==num_episodes:
+            print("Finished")
+            break
+        
             
         
 if __name__=='__main__':

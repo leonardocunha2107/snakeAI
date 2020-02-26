@@ -8,11 +8,9 @@ BLACK     = ( 17.,  18.,  13.)
 RED       = (255.,   0.,   0.)
 GREEN     = (  0., 255.,   0.)
 WHITE     = (255., 255., 255.)
-#directions=[(1,0),(-1,0),(0,1),(0,-1)]
 directions=[(0,1),(-1,0),(0,-1),(1,0)]
-"""directions=['RIGHT','LEFT','UP','DOWN']
-d2v={d:v for d,v in zip(directions,[(1,0),(-1,0),(0,1),(0,-1)])}
-"""
+
+
 def taxi_distance(t1,t2):
     s=0
     for  x,y in zip(t1,t2):
