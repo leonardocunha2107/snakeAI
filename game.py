@@ -20,13 +20,14 @@ def taxi_distance(t1,t2):
 class SnakeGame(gym.Env):
     SNAKE=1
     FRUIT=2
-    def __init__(self,dim=(10,10),device='cuda'):
+    def __init__(self,dim=(10,10),walls=False,device='cuda'):
         self.dim=dim
         self.action_space=gym.spaces.Discrete(4)
         self.observation_space=gym.spaces.Box(0,3,shape=self.dim)
         self.reward_range=(-1,1)
         self.reset()
         self.device=device
+        self.walls=walls
 
     def get_board(self):
         tb=torch.zeros(1,3,self.dim[0],self.dim[1],dtype=torch.float,device=self.device)
@@ -63,11 +64,12 @@ class SnakeGame(gym.Env):
     def step(self,action):
         snake_head=self.snake[-1]
         self.t+=1
-        snake_head=tuple(((snake_head[i]+directions[action][i])%self.dim[i] for i in [0,1]))
-        
+        snake_head=tuple(((snake_head[i]+directions[action][i]) for i in [0,1]))
+        if not self.walls: snake_head=tuple(snake_head[i]%self.dim[i] for i in range(2))
+        if self.walls and (not 0<=snake_head[0]<self.dim[0] or not 0<=snake_head[1]<self.dim[1]):
+            return self.get_board(),-0.25,True,{}
         if len(self.snake)>1 and action%2==self.last_move%2 and action!=self.last_move:
             return self.get_board(),-0.2,False,{}
-        
         self.last_move=action
         if  self.board[snake_head]==self.SNAKE:
             return self.get_board(),-0.25,True,{}

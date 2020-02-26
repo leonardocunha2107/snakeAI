@@ -45,7 +45,7 @@ class Logger:
             self.store.snake_size.append()
             
     def per_episode(self,key):
-        
+        pass
     
           
     def save(self):
@@ -57,6 +57,7 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
     optimizer=kwargs.get('optim',torch.optim.Adam)
     model=kwargs.get('model',FancyModel(num_actions=4, num_initial_convs=2, in_channels=in_channels, conv_channels=32,
                              num_residual_convs=2, num_feedforward=1, feedforward_dim=64))
+    wall=kwargs.get('wall',False)
     if save_dir:
         if os.path.exists(save_dir):
             print (f"Removing previous model at the folder {save_dir}")
@@ -65,7 +66,7 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
     
     device= 'cuda' if torch.cuda.is_available() else 'cpu'
     model=model.to(device)
-    env=SnakeGame(board_shape,device=device)
+    env=SnakeGame(board_shape,walls=wall,device=device)
     a2c=A2C(model,GAMMA)
     trajectories = TrajectoryStore(device)
     optimizer=optimizer(model.parameters(),lr=lr)
