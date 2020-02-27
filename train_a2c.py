@@ -108,7 +108,6 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,colab=True,**kwargs):
     if colab:
         from .a2c_agents import TrajectoryStore, A2C, A2CModel,FancyModel
         from .game import SnakeGame
-        from google.colab import files
     else:
         from a2c_agents import TrajectoryStore, A2C,FancyModel
         from game import SnakeGame
@@ -205,6 +204,9 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,colab=True,**kwargs):
         
 if __name__=='__main__':
     train(50,'Local_Test',plot_every=5,colab=False)      
-        
+else:
+    from google.colab import files
+
+    
 
     
