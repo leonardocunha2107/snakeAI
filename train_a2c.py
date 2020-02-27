@@ -98,10 +98,11 @@ class Logger:
         with open(self.path+self.name+'.json','w+') as fd:
             json.dump(self.store,fd,indent=2)
         self.fig.savefig(self.path+self.name+'.png')
-        if self.colab:
+        """if self.colab:
             files.download(self.path+self.name+'.json')
             files.download(self.path+self.name+'.png')
-
+        """
+        
 def train(num_episodes,name,board_shape=(5,5),lr=1e-4,colab=True,**kwargs):
     
 
@@ -195,7 +196,7 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,colab=True,**kwargs):
             if num_eps%SAVE_EVERY_EPS==0 or num_eps==num_episodes:
                 logger.save()
                 torch.save(model.state_dict(),path+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
-                if colab: files.download(path+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
+                #if colab: files.download(path+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
         if num_eps==num_episodes:
             print("Finished")
             break
