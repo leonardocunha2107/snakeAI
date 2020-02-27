@@ -49,7 +49,7 @@ class Logger:
         ## If the episode we were logging is over
         if done:
             aux=[t for t in self.temp['loss'] if t]
-            self.store['loss'].append(sum(aux)/len(aux))
+            self.store['loss'].append(sum(aux)/len(aux) if aux else 0)
             self.store['snake_size'].append(self.temp['snake_size'][-1])
             aux=self.temp['reward']
             self.rps.extend(aux)
@@ -62,6 +62,7 @@ class Logger:
             self.temp={k:[] for k in self.keys}
             self.num_eps+=1
             if self.num_eps%self.plot_every==0:
+                print(f'Done with eps {self.num_eps}')
                 self.plot()
 
             
@@ -103,25 +104,30 @@ class Logger:
 
 def train(num_episodes,name,board_shape=(5,5),lr=1e-4,colab=True,**kwargs):
     
-    ##extract args
+
     if colab:
         from .a2c_agents import TrajectoryStore, A2C, A2CModel,FancyModel
         from .game import SnakeGame
         from google.colab import files
     else:
-        from a2c_agents import TrajectoryStore, A2C, A2CModel,FancyModel
+        from a2c_agents import TrajectoryStore, A2C,FancyModel
         from game import SnakeGame
-    in_channels=3
-    save_dir=kwargs.get('save_dir','model/')
+        ##extract args
+    
+    on_noob=kwargs.get('on_noob','stay') ##what to do when the model tries to do opposite moves in succesion
+    big_snake=kwargs.get('big_snake',True)  ##if the initial snake_length is 3, else is 1 
+    mult_channels=kwargs.get('mult_channels',True)  ##If the representation we're feeding the model is on multiple channels or on only one
+    in_channels=3 if mult_channels else 1
+    #save_dir=kwargs.get('save_dir','model/')
     optimizer=kwargs.get('optim',torch.optim.AdamW)
-    wall=kwargs.get('wall',False)
+    wall=kwargs.get('wall',False)  ##If the game has walls
     store_render=kwargs.get('store_render',False)
     plot_every=kwargs.get('plot_every',100)
     UPDATE_STEPS=kwargs.get('UPDATE_STEPS',20)
     GAMMA=kwargs.get('GAMMA',0.99)
     SAVE_EVERY_EPS=kwargs.get('SAVE_EVERY_EPS',1000)
     plot_every=kwargs.get('plot_every',100)
-    path=kwargs.get('path','')
+    path=kwargs.get('path','') ##Path to save model and logs
     model=kwargs.get('model',FancyModel(num_actions=4, num_initial_convs=2, in_channels=in_channels, conv_channels=32,
                              num_residual_convs=2, num_feedforward=1, feedforward_dim=64,colab=colab))
     
@@ -135,7 +141,8 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,colab=True,**kwargs):
     ##Create Main objects
     device= 'cuda' if torch.cuda.is_available() else 'cpu'
     model=model.to(device)
-    env=SnakeGame(board_shape,walls=wall,device=device,store_render=store_render)
+    env=SnakeGame(board_shape,walls=wall,device=device,store_render=store_render,
+                  on_noob=on_noob,big_snake=big_snake,mult_channels=mult_channels)
     a2c=A2C(model,GAMMA)
     trajectories = TrajectoryStore(device)
     optimizer=optimizer(model.parameters(),lr=lr)

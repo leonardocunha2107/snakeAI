@@ -14,9 +14,10 @@ def clear():
         _ = system('clear') 
         
 if __name__=='__main__':
-    game=SnakeGame((10,10),walls=True)
+    game=SnakeGame((2,2),walls=True)
     clear()
     while (True):
+        print(game.get_board())
         plt.imshow(game.render())
         plt.show()
         move=input("Move:\n")

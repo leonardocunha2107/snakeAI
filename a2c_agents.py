@@ -8,10 +8,9 @@ EPS = 1e-8
 
 class A2CModel(nn.Module):
     def __init__(self,in_channels=1,n_actions=4,
-                 conv_channels=[32,32],kernel_sizes=[2,3],colab=False):
+                 conv_channels=[32,32],kernel_sizes=[2,3]):
         super(A2CModel,self).__init__()
-        if colab: from .modules import ConvBlock, feedforward_block
-        else: from modules import ConvBlock, feedforward_block
+
 
 
         
@@ -117,8 +116,11 @@ class FancyModel(nn.Module):
                  feedforward_dim: int,
                  num_actions: int,
                  conv_channels: int = 16,
-                 num_heads: int = 1):
+                 num_heads: int = 1, 
+                 colab: bool =False):
         super(FancyModel, self).__init__()
+        if colab: from .modules import ConvBlock, feedforward_block
+        else: from modules import ConvBlock, feedforward_block
         self.in_channels = in_channels
         self.num_initial_convs = num_initial_convs
         self.num_residual_convs = num_residual_convs
