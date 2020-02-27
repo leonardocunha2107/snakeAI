@@ -53,7 +53,7 @@ class Logger:
             self.store['snake_size'].append(self.temp['snake_size'][-1])
             aux=self.temp['reward']
             self.rps.extend(aux)
-            self.store['reward'].append(sum(aux)/len(aux))
+            self.store['reward'].append(sum(aux)/len(aux) if aux else 0)
             if self.store['reward'][-1]>self.max_reward:
                 self.max_reward=self.store['reward'][-1]
                 if 'env' in kwargs and kwargs['env'].store_render:
