@@ -4,13 +4,17 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from typing import Callable
-from modules import ConvBlock, feedforward_block
 EPS = 1e-8
 
 class A2CModel(nn.Module):
     def __init__(self,in_channels=1,n_actions=4,
-                 conv_channels=[32,32],kernel_sizes=[2,3]):
+                 conv_channels=[32,32],kernel_sizes=[2,3],colab=False):
         super(A2CModel,self).__init__()
+        if colab: from .modules import ConvBlock, feedforward_block
+        else: from modules import ConvBlock, feedforward_block
+
+
+        
         assert len(conv_channels)==len(kernel_sizes)
         convs=[nn.Conv2d(in_channels,conv_channels[0],kernel_sizes[0]),nn.ReLU()]
         for i in range(1,len(conv_channels)):

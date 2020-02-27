@@ -1,7 +1,6 @@
 ##Inspired by the work of Oscar Knagg, oscar@knagg.co.uk
 
-from a2c_agents import TrajectoryStore, A2C, A2CModel,FancyModel
-from game import SnakeGame
+
 from itertools import count
 import os
 import torch
@@ -18,7 +17,8 @@ def moving_average(a, window_size=200) :
 
 class Logger:
     
-    def __init__(self,name,path='',plot_every=100):
+    def __init__(self,name,path='',plot_every=100,colab=True):
+        self.colab=colab
         self.name=name
         self.plot_every=plot_every
         self.path=path
@@ -97,10 +97,20 @@ class Logger:
         with open(self.path+self.name+'.json','w+') as fd:
             json.dump(self.store,fd,indent=2)
         self.fig.savefig(self.path+self.name+'.png')
+        if self.colab:
+            files.download(self.path+self.name+'.json')
+            files.download(self.path+self.name+'.png')
 
-def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
-    ##extract args
+def train(num_episodes,name,board_shape=(5,5),lr=1e-4,colab=True,**kwargs):
     
+    ##extract args
+    if colab:
+        from .a2c_agents import TrajectoryStore, A2C, A2CModel,FancyModel
+        from .game import SnakeGame
+        from google.colab import files
+    else:
+        from a2c_agents import TrajectoryStore, A2C, A2CModel,FancyModel
+        from game import SnakeGame
     in_channels=3
     save_dir=kwargs.get('save_dir','model/')
     optimizer=kwargs.get('optim',torch.optim.AdamW)
@@ -113,7 +123,7 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
     plot_every=kwargs.get('plot_every',100)
     path=kwargs.get('path','')
     model=kwargs.get('model',FancyModel(num_actions=4, num_initial_convs=2, in_channels=in_channels, conv_channels=32,
-                             num_residual_convs=2, num_feedforward=1, feedforward_dim=64))
+                             num_residual_convs=2, num_feedforward=1, feedforward_dim=64,colab=colab))
     
     ##clear directory where we'll save our models
     """if save_dir:
@@ -129,7 +139,7 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
     a2c=A2C(model,GAMMA)
     trajectories = TrajectoryStore(device)
     optimizer=optimizer(model.parameters(),lr=lr)
-    logger=Logger(name,path,plot_every)
+    logger=Logger(name,path,plot_every,colab)
     
     num_eps=0
     state=env.get_board()
@@ -179,6 +189,7 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
             if num_eps%SAVE_EVERY_EPS==0 or num_eps==num_episodes:
                 logger.save()
                 torch.save(model.state_dict(),path+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
+                if colab: files.download(path+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
         if num_eps==num_episodes:
             print("Finished")
             break
@@ -186,7 +197,7 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,**kwargs):
             
         
 if __name__=='__main__':
-    train(50,'Local_Test',plot_every=5)      
+    train(50,'Local_Test',plot_every=5,colab=False)      
         
 
     
