@@ -65,7 +65,7 @@ class Logger:
                 print(f'Done with eps {self.num_eps}')
                 self.plot()
 
-            
+
             
         else: self.steps_per_eps[-1]+=1
         
@@ -128,9 +128,13 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,colab=True,**kwargs):
     SAVE_EVERY_EPS=kwargs.get('SAVE_EVERY_EPS',1000)
     plot_every=kwargs.get('plot_every',100)
     path=kwargs.get('path','') ##Path to save model and logs
-    model=kwargs.get('model',FancyModel(num_actions=4, num_initial_convs=2, in_channels=in_channels, conv_channels=32,
+
+    if name == "fancy":
+        model=kwargs.get('model',FancyModel(num_actions=4, num_initial_convs=2, in_channels=in_channels, conv_channels=32,
                              num_residual_convs=2, num_feedforward=1, feedforward_dim=64,colab=colab))
-    
+    elif name == "A2C":
+        model=kwargs.get('model',A2CModel(in_channels=in_channels, num_actions=4, conv_channels=[32,32]))
+
     ##clear directory where we'll save our models
     """if save_dir:
         if os.path.exists(save_dir):
