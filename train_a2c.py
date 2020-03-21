@@ -5,6 +5,7 @@ from itertools import count
 import os
 import torch
 from torch.distributions import Categorical
+import torch.nn as nn
 import shutil
 import numpy as np
 from matplotlib.animation import ArtistAnimation as AA
@@ -12,6 +13,9 @@ import matplotlib.pyplot as plt
 import json
 import random
 import traceback
+
+
+MAX_GRAD_NORM = 0.5
 
 
 def moving_average(a, window_size=500) :
@@ -232,24 +236,17 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
         
             
         
-if __name__=='__main__':
-    '''try: 
-        train(30000,'simple_board',lr=1e-3 ,colab=False,plot_every=10000,
-              board_shape=(9,9),path='',model='fancy',mult_channels=False,wall=True,mulSAVE_EVERY_EPS=20000)
+if __name__=='__main__':    
+    
+    try: 
+        train(40000,'conv_walls',lr=1e-3 ,colab=False,plot_every=10000,
+              board_shape=(9,9),path='experiments/',model='fancy',wall=True,SAVE_EVERY_EPS=20000)
     except: 
         print("fail 2")
         print(traceback.format_exc())
-    
-    
-    try: 
-        train(30000,'conv_walls',lr=1e-3 ,colab=False,plot_every=10000,
-              board_shape=(9,9),path='',model='fancy',wall=True,SAVE_EVERY_EPS=20000)
-    except: 
-        print("fail 2")
-        print(traceback.format_exc())'''
     try: 
         train(40000,'local_view',lr=1e-3 ,colab=False,plot_every=10000,
-              board_shape=(9,9),path='',model='fancy',observation_size=3,wall=True,SAVE_EVERY_EPS=20000)
+              board_shape=(9,9),path='experiments/',model='fancy',observation_size=3,wall=True,SAVE_EVERY_EPS=20000)
     except: 
         print("fail 3")
         print(traceback.format_exc())
