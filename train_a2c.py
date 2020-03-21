@@ -110,8 +110,7 @@ class Logger:
             json.dump(self.store,fd,indent=2)
         self.fig.savefig(self.path+self.name+'.png')
         
-        anim=AA(plt.figure(),[[plt.imshow(i)] for i in self.best_game])
-        anim.save(self.path+self.name+'.gif')      
+        np.save(self.path+self.name+'.npy',self.best_game)      
         """if self.colab:
             files.download(self.path+self.name+'.json')
             files.download(self.path+self.name+'.png')
