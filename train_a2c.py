@@ -10,6 +10,7 @@ import numpy as np
 from matplotlib.animation import ArtistAnimation as AA
 import matplotlib.pyplot as plt
 import json
+import random
 
 def moving_average(a, window_size=500) :
         ret = np.cumsum(np.array(a), dtype=float)
@@ -142,24 +143,24 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     SAVE_EVERY_EPS=kwargs.get('SAVE_EVERY_EPS',1000)
     plot_every=kwargs.get('plot_every',100)
     path=kwargs.get('path','') ##Path to save model and logs
+    
+    seed=kwargs.get('seed',42)   ##seeding
+    np.random.seed(seed=seed)
+    torch.manual_seed(seed)
+    random.seed(seed)
+
     model=kwargs.get('model',"fancy")
     
-    
-    if observation_size:
-        model=FeedforwardModel(4,2,64,num_input=observation_size**2)
-    elif model == "fancy":
-        model=FancyModel(num_actions=4, num_initial_convs=2, in_channels=in_channels, conv_channels=32,
-                             num_residual_convs=2, num_feedforward=1, feedforward_dim=64,colab=colab)
-    elif model == "A2C":
-        model=A2CModel(in_channels=in_channels, n_actions=4, conv_channels=[32,32])
+    if type(model)!=str:           ##choose model
+        if observation_size:
+            model=FeedforwardModel(4,2,64,num_input=observation_size**2)
+        elif model == "fancy":
+            model=FancyModel(num_actions=4, num_initial_convs=2, in_channels=in_channels, conv_channels=32,
+                                 num_residual_convs=2, num_feedforward=1, feedforward_dim=64,colab=colab)
+        elif model == "A2C":
+            model=A2CModel(in_channels=in_channels, n_actions=4, conv_channels=[32,32])
 
-    ##clear directory where we'll save our models
-    """if save_dir:
-        if os.path.exists(save_dir):
-            print (f"Removing previous model at the folder {save_dir}")
-            shutil.rmtree(save_dir)
-        os.mkdir(save_dir)
-    """
+
     ##Create Main objects
     device= 'cuda' if torch.cuda.is_available() else 'cpu'
     model=model.to(device)
