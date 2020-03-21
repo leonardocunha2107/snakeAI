@@ -41,9 +41,9 @@ class FeedforwardModel(nn.Module):
         self.hidden_units = hidden_units
         self.num_actions = num_actions
 
-        feedforwards = [feedforward_block(num_inputs, self.hidden_units),nn.ReLU() ]
+        feedforwards = [nn.Linear(num_inputs, self.hidden_units),nn.ReLU() ]
         for _ in range(self.num_layers - 1):
-            feedforwards.append(feedforward_block(self.hidden_units, self.hidden_units))
+            feedforwards.append(nn.Linear(self.hidden_units, self.hidden_units))
             feedforwards.append(nn.ReLU)
 
         self.feedforward = nn.Sequential(*feedforwards)

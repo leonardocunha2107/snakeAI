@@ -248,7 +248,7 @@ if __name__=='__main__':
         print("fail 2")
         print(traceback.format_exc())
     try: 
-        train(30000,'local_view',lr=1e-3 ,colab=False,plot_every=10000,
+        train(40000,'local_view',lr=1e-3 ,colab=False,plot_every=10000,
               board_shape=(9,9),path='',model='fancy',observation_size=3,wall=True,SAVE_EVERY_EPS=20000)
     except: 
         print("fail 3")
