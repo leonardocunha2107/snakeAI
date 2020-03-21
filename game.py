@@ -53,6 +53,7 @@ class SnakeGame(gym.Env):
         
         ##if we observe only the surroundings of the head
         observation_size=self.observation_size
+        img=self.render()
         img = img.float() / 255
         
         # Pad envs so we ge tthe correct size observation even when the head of the snake

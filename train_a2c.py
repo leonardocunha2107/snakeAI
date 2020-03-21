@@ -234,19 +234,21 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
         
 if __name__=='__main__':
     try: 
-        train(100000,'conv_no_walls',lr=1e-3 ,colab=False,plot_every=10000,
-              board_shape=(9,9),path='',model='fancy',SAVE_EVERY_EPS=20000)
+        train(30000,'simple_board',lr=1e-3 ,colab=False,plot_every=10000,
+              board_shape=(9,9),path='',model='fancy',mult_channels=False,wall=True,mulSAVE_EVERY_EPS=20000)
     except: 
-        print("fail 1")
+        print("fail 2")
         print(traceback.format_exc())
+    
+    
     try: 
-        train(100000,'conv_walls',lr=1e-3 ,colab=False,plot_every=10000,
+        train(30000,'conv_walls',lr=1e-3 ,colab=False,plot_every=10000,
               board_shape=(9,9),path='',model='fancy',wall=True,SAVE_EVERY_EPS=20000)
     except: 
         print("fail 2")
         print(traceback.format_exc())
     try: 
-        train(100000,'local_view',lr=1e-3 ,colab=False,plot_every=10000,
+        train(30000,'local_view',lr=1e-3 ,colab=False,plot_every=10000,
               board_shape=(9,9),path='',model='fancy',observation_size=3,wall=True,SAVE_EVERY_EPS=20000)
     except: 
         print("fail 3")
