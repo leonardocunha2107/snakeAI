@@ -7,7 +7,7 @@ from typing import Callable
 EPS = 1e-8
 
 class A2CModel(nn.Module):
-    def __init__(self,in_channels=1,n_actions=4,
+    def __init__(self,in_channels=3,n_actions=4,
                  conv_channels=[32,32],kernel_sizes=[2,3]):
         super(A2CModel,self).__init__()
 
@@ -31,7 +31,36 @@ class A2CModel(nn.Module):
         values = self.value_head(x)
         action_probabilities = self.policy_head(x)
         return F.softmax(action_probabilities, dim=-1), values
-    
+
+from torch import nn
+import torch.nn.functional as F
+import torch
+
+from wurm.modules import feedforward_block
+
+
+class FeedforwardModel(nn.Module):
+    def __init__(self, num_actions: int,  num_layers: int, hidden_units: int, num_inputs: int = 4):
+        super(FeedforwardModel, self).__init__()
+        self.num_layers = num_layers
+        self.hidden_units = hidden_units
+        self.num_actions = num_actions
+
+        feedforwards = [feedforward_block(num_inputs, self.hidden_units),nn.ReLU() ]
+        for _ in range(self.num_layers - 1):
+            feedforwards.append(feedforward_block(self.hidden_units, self.hidden_units))
+            feedforwards.append(nn.ReLU)
+
+        self.feedforward = nn.Sequential(*feedforwards)
+
+        self.action_head = nn.Linear(self.hidden_units, self.num_actions)
+        self.value_head = nn.Linear(self.hidden_units, 1)
+
+    def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
+        x = self.feedforward(x)
+        action_scores = self.action_head(x)
+        state_values = self.value_head(x)
+        return F.softmax(action_scores, dim=-1), state_values  
 class A2C(object):
     """Class that encapsulates the advantage actor-critic algorithm.
     """
@@ -115,7 +144,7 @@ class FancyModel(nn.Module):
                  num_feedforward: int,
                  feedforward_dim: int,
                  num_actions: int,
-                 conv_channels: int = 16,
+                 conv_channels: int = 32,
                  num_heads: int = 1, 
                  colab: bool =False):
         super(FancyModel, self).__init__()

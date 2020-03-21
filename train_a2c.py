@@ -7,6 +7,7 @@ import torch
 from torch.distributions import Categorical
 import shutil
 import numpy as np
+from matplotlib.animation import ArtistAnimation as AA
 import matplotlib.pyplot as plt
 import json
 
@@ -14,6 +15,8 @@ def moving_average(a, window_size=200) :
         ret = np.cumsum(np.array(a), dtype=float)
         ret[window_size:] = ret[window_size:] - ret[:-window_size]
         return ret[window_size - 1:] / window_size
+def cum_average(a):
+    return np.cumsum(a)/np.arange(1,len(a)+1)
 
 class Logger:
     
@@ -32,6 +35,9 @@ class Logger:
         self.best_game=None
         self.num_eps=0
         
+        if colab:
+            from IPython import display
+            self.display=display
         self.fig=plt.figure(figsize=(9.,8.))
         
     
@@ -75,13 +81,13 @@ class Logger:
         self.fig.clear()
         ((rps_ax,rpe_ax,snake_ax),(steps_ax,loss_ax,_))=self.fig.subplots(2,3)
         
-        rps_ax.set_title('Reward per Step (Moving Average)')
-        rps_ax.plot(moving_average(self.rps))
+        rps_ax.set_title('Reward per Step (Average)')
+        rps_ax.plot(cum_average(self.rps))
         
-        rpe_ax.set_title('Reward per episode')
-        rpe_ax.plot(self.store['reward'])
+        rpe_ax.set_title('Reward per episode (Average)')
+        rpe_ax.plot(cum_average(self.store['reward']))
         
-        snake_ax.set_title('Snake size')
+        snake_ax.set_title('Snake size (Average)')
         snake_ax.plot(self.store['snake_size'])
 
         steps_ax.set_title('Steps per episode')
@@ -90,7 +96,12 @@ class Logger:
         loss_ax.set_title('Loss')
         loss_ax.plot(self.store['loss'])
         
-        self.fig.show()
+        if self.colab:    
+            self.display.clear_output(wait=True)
+            self.display.display(self.fig)
+        else:
+            self.fig.show()
+            
         
     
           
@@ -98,12 +109,15 @@ class Logger:
         with open(self.path+self.name+'.json','w+') as fd:
             json.dump(self.store,fd,indent=2)
         self.fig.savefig(self.path+self.name+'.png')
+        
+        anim=AA(plt.figure(),[[plt.imshow(i)] for i in game.board_store])
+        anim.save(self.path+self.name+'.gif')      
         """if self.colab:
             files.download(self.path+self.name+'.json')
             files.download(self.path+self.name+'.png')
         """
         
-def train(num_episodes,name,board_shape=(5,5),lr=1e-4,colab=True,**kwargs):
+def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     
 
     if colab:
@@ -152,61 +166,64 @@ def train(num_episodes,name,board_shape=(5,5),lr=1e-4,colab=True,**kwargs):
     state=env.get_board()
     
     for i_step in count(1):
-        ## Acting on the env
-
-        probs, state_value = model(state)
-        action_distribution = Categorical(probs)
-        entropy = action_distribution.entropy().mean()
-        action = action_distribution.sample().clone().long()
-        
-        state, reward, done, _ = env.step(action)
-        trajectories.append(
-            action=action,
-            log_prob=action_distribution.log_prob(action),
-            value=state_value,
-            reward=reward,
-            done=done,
-            entropy=entropy
-        )
-        
-        loss=None
-        if  i_step%UPDATE_STEPS==0:
-            ## Compute losses and update model
-            with torch.no_grad():
-                _, bootstrap_values = model(state)
-                
-            value_loss, policy_loss = a2c.loss(bootstrap_values, trajectories.rewards, trajectories.values,
-                                           trajectories.log_probs, trajectories.dones)
-            ##Loss based on pi(s) entropy
-            ##entropy_loss = - trajectories.entropies.mean()
-
-            optimizer.zero_grad()
-            loss = value_loss + policy_loss #+ entropy loss
-            loss.requires_grad=True
-            loss.backward()
-            optimizer.step()
-
-            trajectories.clear()
-        
-        logger.push(done,model=model,env=env,reward=reward,
-                   loss=float(loss) if loss else None)
-        if done: 
-            env.reset()
-            num_eps+=1
-            if num_eps%SAVE_EVERY_EPS==0 or num_eps==num_episodes:
-                logger.save()
-                torch.save(model.state_dict(),path+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
-                #if colab: files.download(path+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
-        if num_eps==num_episodes:
-            print("Finished")
-            break
+        try:
+            ## Acting on the env
+    
+            probs, state_value = model(state)
+            action_distribution = Categorical(probs)
+            entropy = action_distribution.entropy().mean()
+            action = action_distribution.sample().clone().long()
+            
+            state, reward, done, _ = env.step(action)
+            trajectories.append(
+                action=action,
+                log_prob=action_distribution.log_prob(action),
+                value=state_value,
+                reward=reward,
+                done=done,
+                entropy=entropy
+            )
+            
+            loss=None
+            if  i_step%UPDATE_STEPS==0:
+                ## Compute losses and update model
+                with torch.no_grad():
+                    _, bootstrap_values = model(state)
+                    
+                value_loss, policy_loss = a2c.loss(bootstrap_values, trajectories.rewards, trajectories.values,
+                                               trajectories.log_probs, trajectories.dones)
+                ##Loss based on pi(s) entropy
+                ##entropy_loss = - trajectories.entropies.mean()
+    
+                optimizer.zero_grad()
+                loss = value_loss + policy_loss #+ entropy loss
+                loss.requires_grad=True
+                loss.backward()
+                optimizer.step()
+    
+                trajectories.clear()
+            
+            logger.push(done,model=model,env=env,reward=reward,
+                       loss=float(loss) if loss else None)
+            if done: 
+                env.reset()
+                num_eps+=1
+                if num_eps%SAVE_EVERY_EPS==0 or num_eps==num_episodes:
+                    logger.save()
+                    torch.save(model.state_dict(),path+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
+                    #if colab: files.download(path+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
+            if num_eps==num_episodes:
+                print("Finished")
+                break
+        except:
+            return logger
+    return logger
         
             
         
 if __name__=='__main__':
     train(50,'Local_Test',plot_every=5,colab=False)      
-else:
-    from google.colab import files
+
 
     
 
