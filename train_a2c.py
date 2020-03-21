@@ -81,19 +81,19 @@ class Logger:
         self.fig.clear()
         ((rps_ax,rpe_ax,snake_ax),(steps_ax,loss_ax,_))=self.fig.subplots(2,3)
         
-        rps_ax.set_title('Reward per Step (Moving Average)')
+        rps_ax.set_title('Reward per Step (MAVG)')
         rps_ax.plot(moving_average(self.rps))
         
-        rpe_ax.set_title('Reward per episode (Moving Average)')
+        rpe_ax.set_title('Reward per episode (MAVG)')
         rpe_ax.plot(moving_average(self.store['reward']))
         
-        snake_ax.set_title('Snake size (Average)')
-        snake_ax.plot(self.store['snake_size'])
+        snake_ax.set_title('Snake size (MAVG)')
+        snake_ax.plot(moving_average(self.store['snake_size']))
 
         steps_ax.set_title('Steps per episode')
         steps_ax.plot(self.steps_per_eps)
         
-        loss_ax.set_title('Loss')
+        loss_ax.set_title('Loss (MAVG)')
         loss_ax.plot(self.store['loss'])
         
         if self.colab:    
@@ -121,10 +121,10 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     
 
     if colab:
-        from .a2c_agents import TrajectoryStore, A2C, A2CModel,FancyModel
+        from .a2c_agents import TrajectoryStore, A2C,A2CModel,FancyModel,FeedforwardModel
         from .game import SnakeGame
     else:
-        from a2c_agents import TrajectoryStore, A2C,FancyModel
+        from a2c_agents import TrajectoryStore, A2C,A2CModel,FancyModel,FeedforwardModel
         from game import SnakeGame
         ##extract args
     
@@ -135,19 +135,24 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     #save_dir=kwargs.get('save_dir','model/')
     optimizer=kwargs.get('optim',torch.optim.AdamW)
     wall=kwargs.get('wall',False)  ##If the game has walls
-    store_render=kwargs.get('store_render',False)
+    store_render=kwargs.get('store_render',True)
+    observation_size=kwargs.get("obsevation_size",None)
     plot_every=kwargs.get('plot_every',100)
     UPDATE_STEPS=kwargs.get('UPDATE_STEPS',20)
     GAMMA=kwargs.get('GAMMA',0.99)
     SAVE_EVERY_EPS=kwargs.get('SAVE_EVERY_EPS',1000)
     plot_every=kwargs.get('plot_every',100)
     path=kwargs.get('path','') ##Path to save model and logs
-
-    if name == "fancy":
-        model=kwargs.get('model',FancyModel(num_actions=4, num_initial_convs=2, in_channels=in_channels, conv_channels=32,
-                             num_residual_convs=2, num_feedforward=1, feedforward_dim=64,colab=colab))
-    elif name == "A2C":
-        model=kwargs.get('model',A2CModel(in_channels=in_channels, n_actions=4, conv_channels=[32,32]))
+    model=kwargs.get('model',"fancy")
+    
+    
+    if observation_size:
+        model=FeedforwardModel(4,2,64,num_input=observation_size**2)
+    elif model == "fancy":
+        model=FancyModel(num_actions=4, num_initial_convs=2, in_channels=in_channels, conv_channels=32,
+                             num_residual_convs=2, num_feedforward=1, feedforward_dim=64,colab=colab)
+    elif model == "A2C":
+        model=A2CModel(in_channels=in_channels, n_actions=4, conv_channels=[32,32])
 
     ##clear directory where we'll save our models
     """if save_dir:
@@ -160,7 +165,7 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     device= 'cuda' if torch.cuda.is_available() else 'cpu'
     model=model.to(device)
     env=SnakeGame(board_shape,walls=wall,device=device,store_render=store_render,
-                  on_noob=on_noob,big_snake=big_snake,mult_channels=mult_channels)
+                  on_noob=on_noob,big_snake=big_snake,mult_channels=mult_channels,observation_size=observation_size)
     a2c=A2C(model,GAMMA)
     trajectories = TrajectoryStore(device)
     optimizer=optimizer(model.parameters(),lr=lr)
