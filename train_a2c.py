@@ -94,7 +94,7 @@ class Logger:
         steps_ax.plot(self.steps_per_eps)
         
         loss_ax.set_title('Loss (MAVG)')
-        loss_ax.plot(moving_average(self.store['loss']))
+        loss_ax.plot(self.store['loss'])
         
         if self.colab:    
             self.display.clear_output(wait=True)
