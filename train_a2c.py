@@ -195,7 +195,6 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
                 entropy=entropy
             )
             
-            loss=None
             if  i_step%UPDATE_STEPS==0:
                 ## Compute losses and update model
                 with torch.no_grad():
@@ -208,8 +207,10 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     
                 optimizer.zero_grad()
                 loss = value_loss + policy_loss #+ entropy loss
-                loss.requires_grad=True
+                #loss.requires_grad=True
                 loss.backward()
+                nn.utils.clip_grad_norm_(model.parameters(), MAX_GRAD_NORM)
+
                 optimizer.step()
     
                 trajectories.clear()
@@ -221,8 +222,7 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
                 num_eps+=1
                 if num_eps%SAVE_EVERY_EPS==0 or num_eps==num_episodes:
                     logger.save()
-                    torch.save(model.state_dict(),path+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
-                    #if colab: files.download(path+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
+                    torch.save(model.state_dict(),path+name+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
             if num_eps==num_episodes:
                 print("Finished")
                 break
@@ -233,7 +233,7 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
             
         
 if __name__=='__main__':
-    try: 
+    '''try: 
         train(30000,'simple_board',lr=1e-3 ,colab=False,plot_every=10000,
               board_shape=(9,9),path='',model='fancy',mult_channels=False,wall=True,mulSAVE_EVERY_EPS=20000)
     except: 
@@ -246,7 +246,7 @@ if __name__=='__main__':
               board_shape=(9,9),path='',model='fancy',wall=True,SAVE_EVERY_EPS=20000)
     except: 
         print("fail 2")
-        print(traceback.format_exc())
+        print(traceback.format_exc())'''
     try: 
         train(40000,'local_view',lr=1e-3 ,colab=False,plot_every=10000,
               board_shape=(9,9),path='',model='fancy',observation_size=3,wall=True,SAVE_EVERY_EPS=20000)
