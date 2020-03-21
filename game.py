@@ -65,7 +65,7 @@ class SnakeGame(gym.Env):
         observations = padded_img[
             sh[0]-observation_size/2:sh[0]+observation_size/2,sh[1]-observation_size/2:sh[1]+observation_size/2
         ]
-        observations = observations.view((self.num_envs, 3 * (observation_width ** 2))).clone()
+        observations = observations.view(1,-1)
 
         return observations
         

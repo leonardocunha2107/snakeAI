@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from array2gif import write_gif
 import sys
 from matplotlib.animation import ArtistAnimation as AA
+
 def clear(): 
    ##Thanks stackoverflow
     # for windows 

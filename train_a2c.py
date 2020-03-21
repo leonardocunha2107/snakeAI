@@ -11,7 +11,7 @@ from matplotlib.animation import ArtistAnimation as AA
 import matplotlib.pyplot as plt
 import json
 
-def moving_average(a, window_size=200) :
+def moving_average(a, window_size=500) :
         ret = np.cumsum(np.array(a), dtype=float)
         ret[window_size:] = ret[window_size:] - ret[:-window_size]
         return ret[window_size - 1:] / window_size
@@ -81,11 +81,11 @@ class Logger:
         self.fig.clear()
         ((rps_ax,rpe_ax,snake_ax),(steps_ax,loss_ax,_))=self.fig.subplots(2,3)
         
-        rps_ax.set_title('Reward per Step (Average)')
-        rps_ax.plot(cum_average(self.rps))
+        rps_ax.set_title('Reward per Step (Moving Average)')
+        rps_ax.plot(moving_average(self.rps))
         
-        rpe_ax.set_title('Reward per episode (Average)')
-        rpe_ax.plot(cum_average(self.store['reward']))
+        rpe_ax.set_title('Reward per episode (Moving Average)')
+        rpe_ax.plot(moving_average(self.store['reward']))
         
         snake_ax.set_title('Snake size (Average)')
         snake_ax.plot(self.store['snake_size'])
