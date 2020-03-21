@@ -32,11 +32,6 @@ class A2CModel(nn.Module):
         action_probabilities = self.policy_head(x)
         return F.softmax(action_probabilities, dim=-1), values
 
-from torch import nn
-import torch.nn.functional as F
-import torch
-
-from wurm.modules import feedforward_block
 
 
 class FeedforwardModel(nn.Module):
