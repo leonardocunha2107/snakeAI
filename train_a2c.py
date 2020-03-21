@@ -155,7 +155,7 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     
     if type(model)==str:           ##choose model
         if observation_size:
-            model=FeedforwardModel(4,2,64,num_input=observation_size**2)
+            model=FeedforwardModel(4,2,64,num_inputs=observation_size**2)
         elif model == "fancy":
             model=FancyModel(num_actions=4, num_initial_convs=2, in_channels=in_channels, conv_channels=32,
                                  num_residual_convs=2, num_feedforward=1, feedforward_dim=64,colab=colab)
