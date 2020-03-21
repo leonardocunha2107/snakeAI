@@ -198,7 +198,7 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
                 done=done,
                 entropy=entropy
             )
-            
+            loss=None
             if  i_step%UPDATE_STEPS==0:
                 ## Compute losses and update model
                 with torch.no_grad():
@@ -211,7 +211,7 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     
                 optimizer.zero_grad()
                 loss = value_loss + policy_loss #+ entropy loss
-                #loss.requires_grad=True
+                loss.requires_grad=True
                 loss.backward()
                 nn.utils.clip_grad_norm_(model.parameters(), MAX_GRAD_NORM)
 
@@ -238,6 +238,7 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
         
 if __name__=='__main__':    
     try: 
+        print("hey")
         train(40000,'conv_no_walls',lr=5e-4 ,colab=False,plot_every=10000,
               board_shape=(9,9),path='experiments/',model='fancy',wall=False,SAVE_EVERY_EPS=20000)
     except: 
@@ -251,6 +252,7 @@ if __name__=='__main__':
     except: 
         print("fail 2")
         print(traceback.format_exc())
+        
     try: 
         train(40000,'local_view',lr=1e-3 ,colab=False,plot_every=10000,
               board_shape=(9,9),path='experiments/',model='fancy',observation_size=2,wall=True,SAVE_EVERY_EPS=20000)
