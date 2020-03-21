@@ -11,6 +11,8 @@ from matplotlib.animation import ArtistAnimation as AA
 import matplotlib.pyplot as plt
 import json
 import random
+import traceback
+
 
 def moving_average(a, window_size=500) :
         ret = np.cumsum(np.array(a), dtype=float)
@@ -234,15 +236,21 @@ if __name__=='__main__':
     try: 
         train(100000,'conv_no_walls',lr=1e-3 ,plot_every=10000,
               board_shape=(9,9),path='',model='fancy',SAVE_EVERY_EPS=20000)
-    except: print("fail 1")
+    except: 
+        print("fail 1")
+        print(traceback.format_exc())
     try: 
         train(100000,'conv_walls',lr=1e-3 ,plot_every=10000,
               board_shape=(9,9),path='',model='fancy',wall=True,SAVE_EVERY_EPS=20000)
-    except: print("fail 2")
+    except: 
+        print("fail 2")
+        print(traceback.format_exc())
     try: 
         train(100000,'local_view',lr=1e-3 ,plot_every=10000,
               board_shape=(9,9),path='',model='fancy',observation_size=3,wall=True,SAVE_EVERY_EPS=20000)
-    except: print("fail 3")
+    except: 
+        print("fail 3")
+        print(traceback.format_exc())
 
 
     
