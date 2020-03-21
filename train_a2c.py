@@ -136,7 +136,7 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     optimizer=kwargs.get('optim',torch.optim.AdamW)
     wall=kwargs.get('wall',False)  ##If the game has walls
     store_render=kwargs.get('store_render',True)
-    observation_size=kwargs.get("obsevation_size",None)
+    observation_size=kwargs.get("observation_size",None)
     plot_every=kwargs.get('plot_every',100)
     UPDATE_STEPS=kwargs.get('UPDATE_STEPS',20)
     GAMMA=kwargs.get('GAMMA',0.99)
@@ -151,7 +151,7 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
 
     model=kwargs.get('model',"fancy")
     
-    if type(model)!=str:           ##choose model
+    if type(model)==str:           ##choose model
         if observation_size:
             model=FeedforwardModel(4,2,64,num_input=observation_size**2)
         elif model == "fancy":
@@ -231,7 +231,18 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
             
         
 if __name__=='__main__':
-    train(50,'Local_Test',plot_every=5,colab=False)      
+    try: 
+        train(100000,'conv_no_walls',lr=1e-3 ,plot_every=10000,
+              board_shape=(9,9),path='',model='fancy',SAVE_EVERY_EPS=20000)
+    except: print("fail 1")
+    try: 
+        train(100000,'conv_walls',lr=1e-3 ,plot_every=10000,
+              board_shape=(9,9),path='',model='fancy',wall=True,SAVE_EVERY_EPS=20000)
+    except: print("fail 2")
+    try: 
+        train(100000,'local_view',lr=1e-3 ,plot_every=10000,
+              board_shape=(9,9),path='',model='fancy',observation_size=3,wall=True,SAVE_EVERY_EPS=20000)
+    except: print("fail 3")
 
 
     
