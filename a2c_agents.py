@@ -120,7 +120,7 @@ class A2C(object):
 
         if self.normalise_returns:
             returns = (returns - returns.mean()) / (returns.std() + EPS)
-            returns=returns.view(-1,1)
+        returns=returns.view(-1,1)
 
         value_loss = self.value_loss_fn(values, returns).mean()
         advantages = returns - values
