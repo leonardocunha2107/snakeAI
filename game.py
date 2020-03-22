@@ -64,7 +64,8 @@ class SnakeGame(gym.Env):
 
         sh=self.snake[-1]
         observations = padded_img[
-            sh[0]-observation_size/2:sh[0]+observation_size/2,sh[1]-observation_size/2:sh[1]+observation_size/2
+            int(sh[0]-observation_size/2):int(sh[0]+observation_size/2),
+            int(sh[1]-observation_size/2):int(sh[1]+observation_size/2)
         ]
         observations = observations.view(1,-1)
 

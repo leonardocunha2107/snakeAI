@@ -123,7 +123,7 @@ class Logger:
             files.download(self.path+self.name+'.png')
         """
         
-def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
+def train(num_steps,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     
 
     if colab:
@@ -144,11 +144,12 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     store_render=kwargs.get('store_render',True)
     observation_size=kwargs.get("observation_size",None)
     plot_every=kwargs.get('plot_every',100)
-    UPDATE_STEPS=kwargs.get('UPDATE_STEPS',20)
+    UPDATE_STEPS=kwargs.get('UPDATE_STEPS',40)
     GAMMA=kwargs.get('GAMMA',0.99)
     SAVE_EVERY_EPS=kwargs.get('SAVE_EVERY_EPS',1000)
     plot_every=kwargs.get('plot_every',100)
     path=kwargs.get('path','') ##Path to save model and logs
+    normalise_returns=kwargs.get('normalise_returns',True)
     
     seed=kwargs.get('seed',42)   ##seeding
     np.random.seed(seed=seed)
@@ -172,7 +173,7 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     model=model.to(device)
     env=SnakeGame(board_shape,walls=wall,device=device,store_render=store_render,
                   on_noob=on_noob,big_snake=big_snake,mult_channels=mult_channels,observation_size=observation_size)
-    a2c=A2C(model,GAMMA)
+    a2c=A2C(model,GAMMA,normalise_returns=normalise_returns)
     trajectories = TrajectoryStore(device)
     optimizer=optimizer(model.parameters(),lr=lr)
     logger=Logger(name,path,plot_every,colab)
@@ -199,13 +200,14 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
                 entropy=entropy
             )
             loss=None
-            if  i_step%UPDATE_STEPS==0:
+            if  i_step%UPDATE_STEPS==0 or done:
                 ## Compute losses and update model
                 with torch.no_grad():
-                    _, bootstrap_values = model(state)
+                    _, bootstrap_value = model(state)
+                    bootstrap_value=bootstrap_value*(0 if done else 0)
                     
-                value_loss, policy_loss = a2c.loss(bootstrap_values, trajectories.rewards, trajectories.values,
-                                               trajectories.log_probs, trajectories.dones)
+                value_loss, policy_loss = a2c.loss(bootstrap_value, trajectories.rewards, trajectories.values,
+                                               trajectories.log_probs)
                 ##Loss based on pi(s) entropy
                 ##entropy_loss = - trajectories.entropies.mean()
     
@@ -224,10 +226,10 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
             if done: 
                 env.reset()
                 num_eps+=1
-                if num_eps%SAVE_EVERY_EPS==0 or num_eps==num_episodes:
+                if num_eps%SAVE_EVERY_EPS==0 or i_step>=num_steps:
                     logger.save()
                     torch.save(model.state_dict(),path+name+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
-            if num_eps==num_episodes:
+            if i_step>=num_steps:
                 print("Finished")
                 break
         except:
@@ -238,23 +240,21 @@ def train(num_episodes,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
         
 if __name__=='__main__':    
     try: 
-        print("hey")
-        train(40000,'conv_no_walls',lr=5e-4 ,colab=False,plot_every=10000,
-              board_shape=(9,9),path='experiments/',model='fancy',wall=False,SAVE_EVERY_EPS=20000)
+        train(1e7,'conv_walls',lr=5e-4 ,colab=False,plot_every=10000,
+              board_shape=(9,9),path='experiments/',model='fancy',SAVE_EVERY_EPS=20000)
     except: 
         print("fail 1")
         print(traceback.format_exc())
 
-    
     try: 
-        train(40000,'conv_walls',lr=5e-4 ,colab=False,plot_every=10000,
-              board_shape=(9,9),path='experiments/',model='fancy',wall=True,SAVE_EVERY_EPS=20000)
+        train(1e7,'conv_walls_no_normalise',lr=5e-4 ,colab=False,plot_every=10000,
+              board_shape=(9,9),path='experiments/',model='fancy',wall=True,normalise_returns=False,SAVE_EVERY_EPS=20000)
     except: 
         print("fail 2")
         print(traceback.format_exc())
-        
+    
     try: 
-        train(40000,'local_view',lr=1e-3 ,colab=False,plot_every=10000,
+        train(1e7,'local_view',lr=1e-3 ,colab=False,plot_every=10000,
               board_shape=(9,9),path='experiments/',model='fancy',observation_size=2,wall=True,SAVE_EVERY_EPS=20000)
     except: 
         print("fail 3")

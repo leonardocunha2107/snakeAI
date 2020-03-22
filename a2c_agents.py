@@ -96,11 +96,10 @@ class A2C(object):
         return value_loss, policy_loss, entropy_loss
 
     def loss(self,
-             bootstrap_values: torch.Tensor,
+             bootstrap_value: torch.Tensor,
              rewards: torch.Tensor,
              values: torch.Tensor,
-             log_probs: torch.Tensor,
-             dones: torch.Tensor):
+             log_probs: torch.Tensor):
         # Only take whats absolutely necessary for A2C
         # Leave states behind
         # Leave entropy calculation to another piece of code
@@ -110,10 +109,10 @@ class A2C(object):
         # print('log_probs', log_probs.shape)
         # print('dones', dones.shape)
 
-        R = bootstrap_values * (~dones[-1]).float()
         returns = []
-        for r, d in zip(reversed(rewards), reversed(dones)):
-            R = r + self.gamma * R * (~d).float()
+        R=bootstrap_value
+        for r in reversed(rewards):
+            R = r + self.gamma * R 
             returns.insert(0, R)
 
         returns = torch.stack(returns)
