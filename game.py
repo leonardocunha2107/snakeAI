@@ -53,9 +53,8 @@ class SnakeGame(gym.Env):
         
         ##if we observe only the surroundings of the head
         observation_size=self.observation_size
-        img=torch.tensor(self.render())
+        img=torch.tensor(self.render()).transpose(0,1).transpose(0,2)
         img = img.float() / 255
-        
         # Pad envs so we ge tthe correct size observation even when the head of the snake
         # is close to the edge of the environment
         padding = [int(observation_size/2), int(observation_size/2), ] * 2
@@ -63,13 +62,15 @@ class SnakeGame(gym.Env):
 
 
         sh=self.snake[-1]
+        print(padded_img.shape,sh)
         observations = padded_img[
-            int(sh[0]-observation_size/2):int(sh[0]+observation_size/2),
-            int(sh[1]-observation_size/2):int(sh[1]+observation_size/2)
+            :,
+            int(sh[0]):int(sh[0]+observation_size),
+            int(sh[1]):int(sh[1]+observation_size)
         ]
-        observations = observations.view(1,-1)
-
-        return observations
+        print(observations.shape)
+        observations = observations.reshape(1,-1)
+        return observations.to(device=self.device)
         
         
         

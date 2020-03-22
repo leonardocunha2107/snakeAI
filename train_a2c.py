@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import json
 import random
 import traceback
-
+from time import time
 
 MAX_GRAD_NORM = 0.5
 
@@ -139,7 +139,7 @@ def train(num_steps,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     mult_channels=kwargs.get('mult_channels',True)  ##If the representation we're feeding the model is on multiple channels or on only one
     in_channels=3 if mult_channels else 1
     #save_dir=kwargs.get('save_dir','model/')
-    optimizer=kwargs.get('optim',torch.optim.AdamW)
+    optimizer=kwargs.get('optim',torch.optim.RMSprop)
     wall=kwargs.get('wall',False)  ##If the game has walls
     store_render=kwargs.get('store_render',True)
     observation_size=kwargs.get("observation_size",None)
@@ -149,9 +149,9 @@ def train(num_steps,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     SAVE_EVERY_EPS=kwargs.get('SAVE_EVERY_EPS',1000)
     plot_every=kwargs.get('plot_every',100)
     path=kwargs.get('path','') ##Path to save model and logs
-    normalise_returns=kwargs.get('normalise_returns',True)
+    normalise_returns=kwargs.get('normalise_returns',False)
     
-    seed=kwargs.get('seed',42)   ##seeding
+    seed=kwargs.get('seed',50)   ##seeding
     np.random.seed(seed=seed)
     torch.manual_seed(seed)
     random.seed(seed)
@@ -160,7 +160,8 @@ def train(num_steps,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     
     if type(model)==str:           ##choose model
         if observation_size:
-            model=FeedforwardModel(4,2,64,num_inputs=observation_size**2)
+            model=FeedforwardModel(4,2,64,\
+                    num_inputs=in_channels*(observation_size**2))
         elif model == "fancy":
             model=FancyModel(num_actions=4, num_initial_convs=2, in_channels=in_channels, conv_channels=32,
                                  num_residual_convs=2, num_feedforward=1, feedforward_dim=64,colab=colab)
@@ -184,13 +185,12 @@ def train(num_steps,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
     for i_step in count(1):
         try:
             ## Acting on the env
-    
             probs, state_value = model(state)
             action_distribution = Categorical(probs)
             entropy = action_distribution.entropy().mean()
             action = action_distribution.sample().clone().long()
-            
             state, reward, done, _ = env.step(action)
+
             trajectories.append(
                 action=action,
                 log_prob=action_distribution.log_prob(action),
@@ -220,19 +220,23 @@ def train(num_steps,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
                 optimizer.step()
     
                 trajectories.clear()
-            
+
+
             logger.push(done,model=model,env=env,reward=reward,
                        loss=float(loss) if loss else None)
-            if done: 
+            if done:
+                print(i_step)
                 env.reset()
                 num_eps+=1
                 if num_eps%SAVE_EVERY_EPS==0 or i_step>=num_steps:
                     logger.save()
                     torch.save(model.state_dict(),path+name+f'{int(num_eps/SAVE_EVERY_EPS)}.mdl')
             if i_step>=num_steps:
-                print("Finished")
+                print(f"Finished {name}")
                 break
         except:
+            print(traceback.format_exc())
+
             return logger
     return logger
         
@@ -240,26 +244,25 @@ def train(num_steps,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
         
 if __name__=='__main__':    
     try: 
-        train(1e7,'conv_walls',lr=5e-4 ,colab=False,plot_every=10000,
+        train(1e8,'conv_walls',lr=5e-4 ,colab=False,plot_every=10000,
               board_shape=(9,9),path='experiments/',model='fancy',SAVE_EVERY_EPS=20000)
     except: 
         print("fail 1")
         print(traceback.format_exc())
-
+    
     try: 
         train(1e7,'conv_walls_no_normalise',lr=5e-4 ,colab=False,plot_every=10000,
               board_shape=(9,9),path='experiments/',model='fancy',wall=True,normalise_returns=False,SAVE_EVERY_EPS=20000)
     except: 
         print("fail 2")
         print(traceback.format_exc())
-    
+
     try: 
         train(1e7,'local_view',lr=1e-3 ,colab=False,plot_every=10000,
               board_shape=(9,9),path='experiments/',model='fancy',observation_size=2,wall=True,SAVE_EVERY_EPS=20000)
     except: 
         print("fail 3")
         print(traceback.format_exc())
-
 
     
 

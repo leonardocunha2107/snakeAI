@@ -62,7 +62,7 @@ class A2C(object):
     def __init__(self,
                  actor_critic: nn.Module,
                  gamma: float,
-                 value_loss_fn: Callable = F.smooth_l1_loss,
+                 value_loss_fn: Callable = F.l1_loss,
                  normalise_returns: bool = True):
         self.actor_critic = actor_critic
         self.gamma = gamma
@@ -114,9 +114,8 @@ class A2C(object):
         for r in reversed(rewards):
             R = r + self.gamma * R 
             returns.insert(0, R)
-
+        #print(returns)
         returns = torch.stack(returns)
-        # print('returns', returns.shape)
 
         if self.normalise_returns:
             returns = (returns - returns.mean()) / (returns.std() + EPS)
