@@ -47,8 +47,8 @@ class SnakeGame(gym.Env):
             tb=torch.zeros(1,3,self.dim[0],self.dim[1],dtype=torch.float,device=self.device)
             tb[(0,0)+self.fruit]=1
             tb[(0,1)+self.snake[-1]]=1
-            for tup in self.snake:
-                tb[(0,2)+tup]=1
+            for idx,tup in enumerate(self.snake):
+                tb[(0,2)+tup]=idx+1
             return tb
         
         ##if we observe only the surroundings of the head
@@ -120,11 +120,15 @@ class SnakeGame(gym.Env):
         ##Some death conditions
         if not self.walls: snake_head=tuple(snake_head[i]%self.dim[i] for i in range(2))
         if self.walls and (not 0<=snake_head[0]<self.dim[0]  \
-                           or not 0<=snake_head[1]<self.dim[1]):
+                           or not 0<=snake_head[1]<self.dim[1]): ##wall colision
             return self.get_board(),-0.25,True,{}
-        if self.on_noob=='stay' and self.last_move and len(self.snake)>1  \
-            and action%2==self.last_move%2  and action!=self.last_move:
-            return self.get_board(),-0.2,False,{}
+        
+        if self.last_move and len(self.snake)>1 and action%2==self.last_move%2  and action!=self.last_move:
+            if self.on_noob=='stay':
+                return self.get_board(),0,False,{}
+            elif self.on_noob=='forward':
+                action=(action+2)%4
+                
         self.last_move=action
         if  self.board[snake_head]==SNAKE:
             return self.get_board(),-0.25,True,{}

@@ -26,12 +26,13 @@ if __name__=='__main__':
         if move=='exit':
             sys.exit(0)
         move=int(move)
+        
         if move in range(4):
             _,_,done,_=game.step(move)
         if done:
-            fig=plt.figure()
-            anim=AA(fig,[[plt.imshow(i)] for i in game.board_store])
-            anim.save('cli_game.gif')                        
+            #fig=plt.figure()
+            #anim=AA(fig,[[plt.imshow(i)] for i in game.board_store])
+            #anim.save('cli_game.gif')                        
             break
         print(done)
             
