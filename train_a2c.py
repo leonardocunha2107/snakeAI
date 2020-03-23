@@ -225,7 +225,6 @@ def train(num_steps,name,board_shape=(9,9),lr=1e-4,colab=True,**kwargs):
             logger.push(done,model=model,env=env,reward=reward,
                        loss=float(loss) if loss else None)
             if done:
-                print(i_step)
                 env.reset()
                 num_eps+=1
                 if num_eps%SAVE_EVERY_EPS==0 or i_step>=num_steps:
