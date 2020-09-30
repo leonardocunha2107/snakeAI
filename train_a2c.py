@@ -102,12 +102,9 @@ class Logger:
         
         loss_ax.set_title('Loss (MAVG)')
         loss_ax.plot(moving_average(self.store['loss']))
+        self.fig.savefig(self.name)
+
         
-        if self.colab:    
-            self.display.clear_output(wait=True)
-            self.display.display(self.fig)
-        else:
-            self.fig.show()
             
         
     
